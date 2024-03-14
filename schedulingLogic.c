@@ -20,8 +20,86 @@ struct Scheduler_t
     // This is not the ready queues, but the ready queue algorithms
     SchedulingAlgorithm **readyQueueAlgorithms;
     int readyQueueCount;
-
 };
+
+struct Queue_t
+{
+    PCB **processes;
+    int head;
+    int tail;
+    int size;
+};
+
+Queue *initQueue(int size)
+{
+    Queue *queue = malloc(sizeof(Queue));
+    if (!queue)
+    {
+        return NULL;
+    }
+
+    queue->processes = (PCB **)malloc(size * sizeof(PCB *));
+    if (!queue->processes)
+    {
+        free(queue);
+        return NULL;
+    }
+
+    queue->head = 0;
+    queue->tail = 0;
+    queue->size = size;
+
+    return queue;
+}
+
+bool isEmpty(Queue *queue)
+{
+    return queue->head == -1;
+}
+
+void enqueue(Queue *queue, PCB *process)
+{
+    if (queue->tail == queue->size)
+    {
+        // Queue is full, cannot enqueue more elements
+        return;
+    }
+
+    if (isEmpty(queue))
+    {
+        // Queue is empty, insert the element at the head
+        queue->processes[0] = process;
+        queue->head = 0;
+        queue->tail = 1;
+    }
+    else
+    {
+        // Queue is not empty, insert the element at the tail(end of Queue)
+        queue->processes[queue->tail] = process;
+        queue->tail++;
+    }
+}
+
+PCB *dequeue(Queue *queue)
+{
+    if (isEmpty(queue))
+    {
+        return NULL;
+    }
+
+    PCB *process = queue->processes[queue->head];
+    // Update front considering wrapping around
+    queue->head = (queue->head + 1) % queue->size;
+
+    // If the queue becomes empty after dequeue
+    if (isEmpty(queue))
+    {
+        queue->head = -1;
+        queue->tail = -1;
+    }
+
+    return process;
+}
 
 /* ---------------------------- static functions --------------------------- */
 
@@ -59,4 +137,3 @@ void freeScheduler(Scheduler *scheduler)
 }
 
 /* -------------------------- scheduling functions ------------------------- */
-
