@@ -101,6 +101,86 @@ PCB *dequeue(Queue *queue)
     return process;
 }
 
+void FCFS(Scheduler *scheduler, Workload *workload, int timeQuantum)
+{
+    Queue *readyQueue = initQueue(getProcessCount(workload));
+    if (!readyQueue)
+    {
+        fprintf(stderr, "Failed to initialize queue.\n");
+        return;
+    }
+    for (int i = 0; i < getProcessCount(workload); i++)
+    {
+        int pid = getPIDFromWorkload(workload, i);
+        int duration = getProcessDuration(workload, pid);
+        enqueue(readyQueue, getProcessInfo(workload, i));
+    }
+
+    int time = 0;
+    while (!isEmpty(readyQueue))
+    {
+        PCB *process = dequeue(readyQueue);
+        int ProcessDuration = getProcessDuration(workload, process->pid);
+        //int ProcessDuration = processesInfo->processes[time].duration; //can we do a getter to do this?
+
+        for (int i = 0; i < ProcessDuration; i++)
+        {
+            runProcess(process, 1);
+            time++;
+        }
+        free(process);
+    }
+    // free(readyQueue->processes); might cause double free
+    free(readyQueue);
+}
+
+
+int compareProcesses(Workload* w, int pida, int pidb) {
+    
+    if ( getProcessStartTime(w, pida) != getProcessStartTime(w, pidb)) {
+        return getProcessStartTime(w, pida)  - getProcessStartTime(w, pidb);
+    } else {
+        return getProcessDuration(w, pida) - getProcessDuration(w, pidb);
+    }
+}
+
+
+void SJF(Scheduler *scheduler, Workload *workload, int timeQuantum)
+{
+    int processCount = getProcessCount(workload);
+    int *processes = malloc(processCount * sizeof(int));
+    if (!processes)
+    {
+        fprintf(stderr, "Failed to allocate memory for processes array.\n");
+        return;
+    }
+
+    for (int i = 0; i < processCount; i++)
+    {
+        processes[i] = i;
+    }
+
+    qsort(processes, processCount, sizeof(int), compareProcesses);
+
+    int time = 0;
+    for (int i = 0; i < processCount; i++)
+    {
+        int pid = processes[i];
+        int duration = getProcessDuration(workload, pid);
+        for (int j = 0; j < duration; j++)
+        {
+            runProcess(getProcessInfo(workload, pid), 1);
+            time++;
+        }
+    }
+
+    free(processes);
+}
+
+
+
+
+
 /* ---------------------------- static functions --------------------------- */
 
 /* -------------------------- getters and setters -------------------------- */

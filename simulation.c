@@ -93,22 +93,26 @@ static bool workloadOver(const Workload *workload);
 
 static void addAllProcessesToStats(AllStats *stats, Workload *workload);
 
-/**
- * Compare function used in qsort before the main simulation loop. If you don't
- * use qsort, you can remove this function.
- *
- * @param a, b: pointers to ProcessSimulationInfo to compare
- *
- * @return < 0 if process a is first, > 0 if b is first, = 0 if they start at
- *         the same time
- */
-static int compareProcessStartTime(const void *a, const void *b);
 
+
+/**
+ * Retrieves the process information for a given index from the specified workload.
+ *
+ * @param workload The workload containing the processes.
+ * @param index The index of the process to retrieve.
+ * @return A pointer to the ProcessSimulationInfo struct representing the process information.
+ */
+static ProcessSimulationInfo *getProcessInfo(Workload *workload, int index);
 /* -------------------------- getters and setters -------------------------- */
 
 int getProcessCount(const Workload *workload)
 {
     return workload->nbProcesses;
+}
+
+ProcessSimulationInfo *getProcessInfo(Workload *workload, int index)
+{
+    return workload->processesInfo[index];
 }
 
 int getPIDFromWorkload(Workload *workload, int index)

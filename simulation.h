@@ -26,6 +26,7 @@ typedef struct Workload_t Workload;
  */
 int getProcessCount(const Workload *workload);
 
+
 /**
  * Get the PID of the process at the given index in the workload
  *
