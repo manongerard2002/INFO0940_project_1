@@ -65,4 +65,7 @@ void freeCPU(CPU *cpu);
 Disk *initDisk(void);
 void freeDisk(Disk *disk);
 
+
+void interruptHandler();
+
 #endif // computer_h
