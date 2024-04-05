@@ -388,7 +388,7 @@ void launchSimulation(Workload *workload, SchedulingAlgorithm **algorithms, int 
     }
     setNbProcessesInStats(stats, getProcessCount(workload));
 
-    Scheduler *scheduler = initScheduler(algorithms, algorithmCount, workload->nbProcesses);
+    Scheduler *scheduler = initScheduler(algorithms, algorithmCount, 0);
     if (!scheduler)
     {
         fprintf(stderr, "Error: could not initialize scheduler\n");
@@ -430,60 +430,14 @@ void launchSimulation(Workload *workload, SchedulingAlgorithm **algorithms, int 
     qsort(workload->processesInfo, workload->nbProcesses, sizeof(ProcessSimulationInfo *), compareProcessStartTime);
 
     int time = 0;
-    //at max all processes arrive
-    int *processArrivedIndexes = malloc(workload->nbProcesses * sizeof(int));
-    if (!processArrivedIndexes)
-    {
-        fprintf(stderr, "Error: could not initialize processIndexes\n");
-        freeDisk(disk);
-        freeCPU(cpu);
-        freeScheduler(scheduler);
-        return;
-    }
+
 
     /* Main loop of the simulation.*/
     while (!workloadOver(workload)) // You probably want to change this condition
     {
-        printf("---in while\n");
         // TODO
-        //1. Handle event(s): simulator and the scheduler check if an event is triggered at the current time unit and handle it
-        //Ex: if a process arrives in the system, the simulator will call the scheduler to put the process in the ready queue.
-        processArrived(scheduler, workload, time);
-        //Ex: event = scheduling events, such as a process needing to move to an upper queue because of aging
-        //Ex: event = hardware events, such as the triggering of an interrupt.
-
-        //2. Assign processes to resources: This is the step where the main scheduling decisions are made:
-        //choosing what processes to execute next.
-        //The scheduler will check if a process is ready to be executed and will choose what core it should put it on (or not).
-        int processIndex = topReadyQueue(scheduler);
-        if (processIndex != -1)
-        {
-            int processPID = getPIDFromWorkload(workload, processIndex);
-            //envoyer sur CPU
-            printf("%d\n", processPID);
-        }
-        //The scheduler could also put a process on the disk if it is idle.
-        if (disk->isIdle)
-        {
-            printf("--disk isIdle\n");
-        }
-
-    
-        //3. Get next event time: Here, the simulator and scheduler will simply check what is the time unit
-        //of the next event in order to jump directly to it in the next step.
-
-        //next event: il y a plus rien, process arrive, disk fini, IO ..., CPU
-
-        //4. Advance time to the next event: This is where the progression of time is simulated. The simulator
-        //will update the advancement of the processes in the workload and the scheduler will update its
-        //timers. Then the current time can be updated too in order to deal with the next event at the
-        //next iteration of the loop.
-        int next_time = 0;
-        time = next_time;
-        //advancement in disk, CPU,...
         break;
     }
-    free(processArrivedIndexes);
 
     freeComputer(computer);
 }

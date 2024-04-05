@@ -57,15 +57,42 @@ struct Disk_t
  */
 
 Computer *initComputer(Scheduler *scheduler, CPU *cpu, Disk *disk);
+
+/**
+ * Frees the memory allocated for a Computer object.
+ *
+ * @param computer The Computer object to be freed.
+ */
 void freeComputer(Computer *computer);
 
+/**
+ * Initializes a CPU with the specified number of cores.
+ *
+ * @param coreCount The number of cores to initialize the CPU with.
+ * @return A pointer to the initialized CPU.
+ */
 CPU *initCPU(int coreCount);
+
+/**
+ * Frees the memory allocated for a CPU object.
+ *
+ * @param cpu The CPU object to be freed.
+ */
 void freeCPU(CPU *cpu);
 
+
+/**
+ * Initializes a disk.
+ *
+ * @return A pointer to the initialized Disk object.
+ */
 Disk *initDisk(void);
+
+/**
+ * Frees the memory allocated for a Disk object.
+ *
+ * @param disk The Disk object to be freed.
+ */
 void freeDisk(Disk *disk);
-
-
-void interruptHandler();
 
 #endif // computer_h

@@ -10,7 +10,6 @@
 #include "schedulingLogic.h"
 #include "utils.h"
 #include "schedulingAlgorithms.h"
-#include "schedulingReadyQueues.h"
 
 #define NB_WAIT_QUEUES 1
 
@@ -21,7 +20,9 @@ struct Scheduler_t
     // This is not the ready queues, but the ready queue algorithms
     SchedulingAlgorithm **readyQueueAlgorithms;
     int readyQueueCount;
-    SchedulingReadyQueue **readyQueues; //need to change to a generic queue which acts depending on its type
+    int time;
+    Workload *workload;
+
 };
 
 /* ---------------------------- static functions --------------------------- */
@@ -35,8 +36,7 @@ int getWaitQueueCount(void)
 
 /* -------------------------- init/free functions -------------------------- */
 
-//ajout de workload
-Scheduler *initScheduler(SchedulingAlgorithm **readyQueueAlgorithms, int readyQueueCount, int nbProcesses)
+Scheduler *initScheduler(SchedulingAlgorithm **readyQueueAlgorithms, int readyQueueCount, int time)
 {
     Scheduler *scheduler = malloc(sizeof(Scheduler));
     if (!scheduler)
@@ -46,11 +46,7 @@ Scheduler *initScheduler(SchedulingAlgorithm **readyQueueAlgorithms, int readyQu
 
     scheduler->readyQueueAlgorithms = readyQueueAlgorithms;
     scheduler->readyQueueCount = readyQueueCount;
-    scheduler->readyQueues = (SchedulingReadyQueue **) malloc(readyQueueCount * sizeof(SchedulingReadyQueue *));
-    for (int i=0; i<readyQueueCount; i++)
-    {
-        scheduler->readyQueues[i] = initSchedulingReadyQueue(nbProcesses);
-    }
+    scheduler->time = time;
 
     return scheduler;
 }
@@ -60,38 +56,23 @@ void freeScheduler(Scheduler *scheduler)
     for (int i = 0; i < scheduler->readyQueueCount; i++)
     {
         free(scheduler->readyQueueAlgorithms[i]);
-        free(scheduler->readyQueues[i]);
     }
     free(scheduler->readyQueueAlgorithms);
-    free(scheduler->readyQueues);
     free(scheduler);
 }
 
 /* -------------------------- scheduling functions ------------------------- */
 
-void putProcessInReadyQueue(Scheduler *scheduler, int queueNbr, int processIndex) {
-    if (scheduler->readyQueueAlgorithms[queueNbr]->type == FCFS)
-    {
-        enqueueSchedulingReadyQueueFCFS(scheduler->readyQueues[queueNbr], processIndex);
+int FCFS(Computer *computer){
+    if(computer == NULL){
+        return EXIT_FAILURE;
     }
-}
 
-int topReadyQueue(Scheduler *scheduler) {
-    for (int i=0; i <= scheduler->readyQueueCount; i++)
-    {
-        if (!isEmptySchedulingReadyQueue(scheduler->readyQueues[i]))
-            if (scheduler->readyQueueAlgorithms[i]->type == FCFS)
-                return topSchedulingReadyQueueFCFS(scheduler->readyQueues[i]);
-    }
-    return -1;
-}
+    Workload *workload;
 
-void processArrived(Scheduler *scheduler, Workload *workload, int time)
-{
-    for (int i = 0; i < getProcessCount(workload); i++)
-    {
-        int pid = getPIDFromWorkload(workload, i);
-        if (getProcessStartTime(workload, pid) == time)
-            putProcessInReadyQueue(scheduler, 0, i);
+    for(int i = 0; i < getProcessCount(computer->scheduler->workload); i++){
+        enqueue(computer->scheduler, getPIDFromWorkload(computer->scheduler->workload, i), computer->scheduler->time);
     }
+
+    return EXIT_SUCCESS;
 }

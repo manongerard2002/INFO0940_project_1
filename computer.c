@@ -95,8 +95,3 @@ void freeDisk(Disk *disk)
 {
     free(disk);
 }
-
-void interruptHandler() {
-    //to do
-    return;
-}

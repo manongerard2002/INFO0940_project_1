@@ -6,7 +6,6 @@
 #include "graph.h"
 #include "stats.h"
 #include "simulation.h"
-#include "schedulingReadyQueues.h"
 
 // Cannot include computer.h because of circular dependency
 // -> forward declaration of Computer
@@ -24,30 +23,32 @@ int getWaitQueueCount(void);
 
 /* -------------------------- init/free functions -------------------------- */
 
-//ajout nbProcesses
-Scheduler *initScheduler(SchedulingAlgorithm **readyQueueAlgorithms, int readyQueueCount, int nbProcesses);
+/**
+ * Initializes a scheduler with the given ready queue algorithms.
+ *
+ * @param readyQueueAlgorithms An array of pointers to SchedulingAlgorithm objects representing the ready queue algorithms.
+ * @param readyQueueCount The number of ready queue algorithms in the array.
+ * @return A pointer to the initialized Scheduler object.
+ */
+Scheduler *initScheduler(SchedulingAlgorithm **readyQueueAlgorithms, int readyQueueCount, int time);
+
+
+/**
+ * Frees the memory allocated for a Scheduler object.
+ *
+ * @param scheduler The Scheduler object to be freed.
+ */
 void freeScheduler(Scheduler *scheduler);
 
 
 /* -------------------------- scheduling functions ------------------------- */
 
 /**
- * Put the process in the queue number queueNbr
-*/
-void putProcessInReadyQueue(Scheduler *scheduler, int queueNbr, int processIndex);
-
-/**
- * Get the first process index from the given queues, without dequeuining it.
+ * Performs the First-Come, First-Served (FCFS) scheduling algorithm on the given computer.
  *
- * @param SchedulingReadyQueue The SchedulingReadyQueue from which to get the process index.
- * 
- * @return The process index, or -1 if the SchedulingReadyQueue is empty.
+ * @param computer The computer on which the scheduling algorithm will be performed.
+ * @return The total time taken to complete all processes in the computer.
  */
-int topReadyQueue(Scheduler *scheduler);
-
-/**
- * Put the processes that arrived in the simulation at that time in the readyqueue
-*/
-void processArrived(Scheduler *scheduler, Workload* workload, int time);
+int FCFS(Computer *computer);
 
 #endif // schedulingLogic_h
