@@ -64,6 +64,8 @@ int topReadyQueue(Scheduler *scheduler);
 
 int dequeueReadyQueue(Scheduler *scheduler);
 
+int allProcessesInReadyQueues(Scheduler *scheduler, int* allProcesses);
+
 void handleEvents(Computer *computer, Workload *workload, int time, ProcessGraph *graph, AllStats *stats);
 
 /**
@@ -73,9 +75,11 @@ void processArrived(Scheduler *scheduler, Workload* workload, int time, ProcessG
 
 void assignProcessesToResources(Computer *computer, Workload *workload, int time, ProcessGraph *graph, AllStats *stats, int *cpuCoresIDLE);
 
-void putProcessOnCPU(Computer *computer, int coreIndex, ProcessGraph *graph, int pid, int time);
+void putProcessOnCPU(Computer *computer, int coreIndex, ProcessGraph *graph, int pid, int time, AllStats *stats);
 
 int getNextSchedulingEventTime(Computer *computer, Workload *workload, Scheduler *scheduler);
+
+void updateGraphAndStats(int time, int next_time, Workload *workload, Computer *computer, ProcessGraph *graph, AllStats *stats, int *allProcesses);
 
 /**
  * Performs the First-Come, First-Served (FCFS) scheduling algorithm on the given computer.

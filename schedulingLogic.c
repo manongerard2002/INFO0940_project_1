@@ -95,6 +95,15 @@ int dequeueReadyQueue(Scheduler *scheduler) {
     return -1;
 }
 
+int allProcessesInReadyQueues(Scheduler *scheduler, int* allProcesses) {
+    int indexStart = 0;
+    for (int i = 0; i < scheduler->readyQueueCount; i++)
+    {
+        indexStart = allProcessesInReadyQueue(scheduler->readyQueues[i], allProcesses, indexStart);
+    }
+    return indexStart;
+}
+
 //Here or in simulation.c
 void handleEvents(Computer *computer, Workload *workload, int time, ProcessGraph *graph, AllStats *stats)
 {
@@ -102,39 +111,42 @@ void handleEvents(Computer *computer, Workload *workload, int time, ProcessGraph
     //Ex: if a process arrives in the system, the simulator will call the scheduler to put the process in the ready queue.
     printf("beginning of handleEvents\n");
     processArrived(computer->scheduler, workload, time, graph, stats);
-    
-    printReadyQueue(computer->scheduler->readyQueues[0]);
+
     //Ex: event = scheduling events, such as a process needing to move to an upper queue because of aging
 
     for (int j = 0; j < getProcessCount(workload); j++)
     {
         int pid = getPIDFromWorkload(workload, j);
-        if (getProcessStartTime(workload, pid) > time)
+        if (getProcessStartTime(workload, pid) < time)
         {
             int remainingEventTime = getProcessCurEventTimeLeft(workload, pid);
-            if (remainingEventTime <= 0)
+            if (remainingEventTime <= 0) //or = only
             {
                 printf("need to deal with finish op for pid:%d\n", pid);
+                
             }
         }
     }
-
     //cpu: switch-in/out
     for (int i = 0; i < computer->cpu->coreCount; i++)
     {
+        int pid = computer->cpu->cores[i]->PID;
         if (computer->cpu->cores[i]->switchInTimer == getSwitchInDuration())
         {
-            printf("switch-in finshed\n");
-            //computer->cpu->cores[i]->state = OCCUPIED;
-            addProcessEventToGraph(graph, computer->cpu->cores[i]->PID, time, RUNNING, i);
+            printf("switch-in finished\n");
+            computer->cpu->cores[i]->state = OCCUPIED;
+            computer->cpu->cores[i]->switchInTimer = -1;
+            addProcessEventToGraph(graph, pid, time, RUNNING, i);
         }
         else if (computer->cpu->cores[i]->switchOutTimer == getSwitchOutDuration())
         {
-            printf("switch-out finshed\n");
+            printf("switch-out finished\n");
             computer->cpu->cores[i]->state = IDLE;
-            //put it were it should go
+            computer->cpu->cores[i]->switchOutTimer = -1;
+            //put it were it should go: and there update graph
         }
     }
+
     //Ex: event = hardware events, such as the triggering of an interrupt.
 }
 
@@ -152,6 +164,19 @@ void assignProcessesToResources(Computer *computer, Workload *workload, int time
             cpuCoresIDLE[nb] = i;
             nb++;
         }
+        //start switch out
+        if (computer->cpu->cores[i]->state == OCCUPIED && getProcessCurEventTimeLeft(workload, computer->cpu->cores[i]->PID) == 0)
+        {
+            int pid = computer->cpu->cores[i]->PID;
+            bool terminated = getProcessNextEventTime(workload, pid) == getProcessDuration(workload, pid);
+            if (!terminated)
+            {
+                printf("switch-out start\n");
+                computer->cpu->cores[i]->state = SWITCH_OUT;
+                computer->cpu->cores[i]->switchOutTimer = 0; // start timer
+                //put it were it should go: and there update graph
+            }
+        }
     }
     //printf("number of core idle: %d\n", nb);
     for (int i = 0; i < nb; i++)
@@ -159,10 +184,15 @@ void assignProcessesToResources(Computer *computer, Workload *workload, int time
         int pid = dequeueReadyQueue(computer->scheduler);
         if (pid != -1)
         {
+            //start switch-in
             printf("selected process: %d\n", pid);
-            putProcessOnCPU(computer, cpuCoresIDLE[i], graph, pid, time);
+            putProcessOnCPU(computer, cpuCoresIDLE[i], graph, pid, time, stats);
         }
     }
+
+    
+        
+
     //The scheduler could also put a process on the disk if it is idle.
     if (computer->disk->state == DISK_IDLE)
     {
@@ -170,12 +200,15 @@ void assignProcessesToResources(Computer *computer, Workload *workload, int time
     }
 }
 
-void putProcessOnCPU(Computer *computer, int coreIndex, ProcessGraph *graph, int pid, int time)
+void putProcessOnCPU(Computer *computer, int coreIndex, ProcessGraph *graph, int pid, int time, AllStats *stats)
 {
     printf("putProcessOnCPU with index: %d\n", coreIndex);
-    computer->cpu->cores[coreIndex]->state = OCCUPIED;
+    computer->cpu->cores[coreIndex]->state = SWITCH_IN;
     computer->cpu->cores[coreIndex]->switchInTimer = 0; // start timer
+    computer->cpu->cores[coreIndex]->PID = pid;
     addProcessEventToGraph(graph, pid, time, READY, coreIndex);
+    getProcessStats(stats, pid)->cpuTime=getProcessStats(stats, pid)->cpuTime+1;
+    getProcessStats(stats, pid)->nbContextSwitches=getProcessStats(stats, pid)->nbContextSwitches+1;
 }
 
 //Here or in simulation.c
@@ -183,6 +216,66 @@ int getNextSchedulingEventTime(Computer *computer, Workload *workload, Scheduler
 {
     int time = -1;
     return time;
+}
+
+void updateGraphAndStats(int time, int next_time, Workload *workload, Computer *computer, ProcessGraph *graph, AllStats *stats, int* allProcesses) {
+    int delta_time = next_time - time;
+    printf("\nupdateGraphAndStats: time=%d    next_time=%d     delta_time=%d\n",time, next_time, delta_time);
+    //update in the readyqueue
+    int maxIndex = allProcessesInReadyQueues(computer->scheduler, allProcesses);
+    for (int i = 0; i < maxIndex; i++)
+    {
+        int pid = allProcesses[i];
+        printf("Process in readyqueue: %d\n", pid);
+        for(int j = time; j < next_time; j++)
+        {
+            addProcessEventToGraph(graph, pid, j, READY, i);
+        }
+        getProcessStats(stats, pid)->waitingTime=getProcessStats(stats, pid)->waitingTime+delta_time;
+    }
+
+    //update in the cpu
+    for (int i = 0; i < computer->cpu->coreCount; i++)
+    {
+        if (computer->cpu->cores[i]->state == OCCUPIED)
+        {
+            int pid = computer->cpu->cores[i]->PID;
+            printf("selected process: %d in occuped cpu\n", pid);
+            for(int j = time; j < next_time; j++)
+            {
+                addProcessEventToGraph(graph, pid, j, RUNNING, i);
+            }
+            getProcessStats(stats, pid)->cpuTime=getProcessStats(stats, pid)->cpuTime+delta_time;
+
+            bool terminated = getProcessNextEventTime(workload, pid) == getProcessDuration(workload, pid);
+            if (!terminated)
+            {
+                printf("process %d terminated", pid);
+                getProcessStats(stats, pid)->finishTime=next_time;
+            }
+        }
+        else if (computer->cpu->cores[i]->state == SWITCH_IN)
+        {
+            int pid = computer->cpu->cores[i]->PID;
+            printf("selected process: %d in switch in cpu\n", pid);
+            for(int j = time + 1; j < next_time; j++)
+            {
+                addProcessEventToGraph(graph, pid, j, READY, i);
+            }
+            getProcessStats(stats, pid)->cpuTime=getProcessStats(stats, pid)->cpuTime+delta_time;
+        }
+        else if (computer->cpu->cores[i]->state == SWITCH_OUT)
+        {
+            int pid = computer->cpu->cores[i]->PID;
+            printf("selected process: %d in switch out cpu\n", pid);
+            for(int j = time + 1; j < next_time; j++)
+            {
+                addProcessEventToGraph(graph, pid, j, READY, i);
+            }
+            getProcessStats(stats, pid)->cpuTime=getProcessStats(stats, pid)->cpuTime+delta_time;
+        }
+    }
+    //update in the disk
 }
 
 /*int FCFSalgo(Computer *computer)

@@ -78,12 +78,23 @@ int topSchedulingReadyQueueFCFS(SchedulingReadyQueue *SchedulingReadyQueue)
     return pid;
 }
 
+int allProcessesInReadyQueue(SchedulingReadyQueue *SchedulingReadyQueue, int *allProcesses, int indexStart) {
+    int i = SchedulingReadyQueue->head;
+    while (i != SchedulingReadyQueue->tail) {
+        allProcesses[indexStart] = SchedulingReadyQueue->processesPID[i];
+        indexStart++;
+        i = (i + 1) % SchedulingReadyQueue->size;
+    }
+    return indexStart;
+}
+
 void printReadyQueue(SchedulingReadyQueue *SchedulingReadyQueue)
 {
-    printf("printReadyQueue\n");
-    for (int i = SchedulingReadyQueue->head; i < SchedulingReadyQueue->tail; i++)
-    {
-        printf("%d\n", SchedulingReadyQueue->processesPID[i]);
+    printf("printReadyQueue: ");
+    int i = SchedulingReadyQueue->head;
+    while (i != SchedulingReadyQueue->tail) {
+        printf("%d  ", SchedulingReadyQueue->processesPID[i]);
+        i = (i + 1) % SchedulingReadyQueue->size;
     }
     printf("\n");
 }

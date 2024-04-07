@@ -457,6 +457,17 @@ void launchSimulation(Workload *workload, SchedulingAlgorithm **algorithms, int 
         return;
     }
 
+    //at max nbProcesses on the queue
+    int* allProcesses = malloc(workload->nbProcesses * sizeof(int));
+    if (!allProcesses)
+    {
+        fprintf(stderr, "Error: could not initialize allProcesses\n");
+        freeDisk(disk);
+        freeCPU(cpu);
+        freeScheduler(scheduler);
+        return;
+    }
+
     /* Main loop of the simulation.*/
     while (true)//!workloadOver(workload)) // You probably want to change this condition
     {
@@ -466,6 +477,7 @@ void launchSimulation(Workload *workload, SchedulingAlgorithm **algorithms, int 
 
         //2. Assign processes to resources: This is the step where the main scheduling decisions are made:
         //choosing what processes to execute next.
+        //it already update the graph for timte = time
         assignProcessesToResources(computer, workload, time, graph, stats, cpuCoresIDLE);
 
         //3. Get next event time: Here, the simulator and scheduler will simply check what is the time unit
@@ -473,11 +485,13 @@ void launchSimulation(Workload *workload, SchedulingAlgorithm **algorithms, int 
         int nextProcessEventTime = getNextProcessEventTime(computer, workload, scheduler, time);
         int nextSchedulingEventTime = getNextSchedulingEventTime(computer, workload, scheduler);
         int next_time = minTime(nextProcessEventTime, nextSchedulingEventTime);
-        printf("time=%d    next event time= %d\n", time, next_time);
+        int deltaTime = next_time - time;
+        printf("time=%d    next event time= %d     deltaTime=%d\n", time, next_time, deltaTime);
 
         //4. Advance time to the next event: This is where the progression of time is simulated. The simulator
         //will update the advancement of the processes in the workload and the scheduler will update its
         //timers.
+        //need to do a fct
 
         for (int j = 0; j < getProcessCount(workload); j++)
         {
@@ -494,16 +508,32 @@ void launchSimulation(Workload *workload, SchedulingAlgorithm **algorithms, int 
             }
         }
 
-        /*// Updating graph and statistics -> doit etre fait au fur et a mesure je pense
-        //updateGraphAndStats(time, workload, computer, graph, stats);*/
+        //cpu: switch-in/out
+        for (int i = 0; i < computer->cpu->coreCount; i++)
+        {
+
+            if (computer->cpu->cores[i]->switchInTimer != -1)
+            {
+                computer->cpu->cores[i]->switchInTimer = deltaTime;
+                printf("update timer: computer->cpu->cores[%d]->switchInTimer=%d\n", i, computer->cpu->cores[i]->switchInTimer);
+            }
+            else if (computer->cpu->cores[i]->switchOutTimer != -1)
+            {
+                computer->cpu->cores[i]->switchOutTimer = deltaTime;
+                printf("update timer: computer->cpu->cores[%d]->switchOutTimer=%d\n", i, computer->cpu->cores[i]->switchOutTimer);
+            }
+        }
+
+        // Updating graph and statistics -> between time and before next_time
+        updateGraphAndStats(time, next_time, workload, computer, graph, stats, allProcesses);
         
         //Then the current time can be updated too in order to deal with the next event at the next iteration of the loop.
         if (next_time == - 1 || time == next_time)
             break;
         time = next_time;
         
-        if (time > 30)
-            break; //to suppress once everything done
+        //if (time > 2)
+        //    break; //to suppress once everything done
     }
     //free(processArrivedIndexes);
     freeComputer(computer);
@@ -595,16 +625,25 @@ void processArrived(Scheduler *scheduler, Workload *workload, int time, ProcessG
 
 static int getNextProcessEventTime(Computer *computer, Workload *workload, Scheduler *scheduler, int currentTime)
 {
+    printf("getNextProcessEventTime\n");
     //next event: soit il y a plus rien (-1), process arrive, disk fini, IO ..., CPU
     int time = -1;
+    int next_time = -1;
     for (int i = 0; i < getProcessCount(workload); i++)
     {
         int pid = getPIDFromWorkload(workload, i);
         if (pid != -1)
         {
-            int next_time = getProcessNextEventTime(workload, pid) + getProcessStartTime(workload, pid); //need "real" time not of th eprocess
-            printf("nextPevent: time=%d    next_time=%d\n", time, next_time);
-            time = minTime(time, next_time);
+            //process arriving
+            next_time = getProcessStartTime(workload, pid);
+            if (next_time == time) {
+                printf("process %d Arrived at time %d\n", pid, time);
+                printf("process %i arriving: time=%d    next_time=%d\n", pid, time, next_time);
+                time = minTime(time, next_time);
+            }
+            /*int next_time = getProcessNextEventTime(workload, pid) + getProcessStartTime(workload, pid); //need "real" time not of th eprocess
+            printf("nextPevent %d: time=%d    next_time=%d\n", pid, time, next_time);
+            time = minTime(time, next_time);*/
         }
     }
     //cpu: switch-in/out
@@ -612,13 +651,24 @@ static int getNextProcessEventTime(Computer *computer, Workload *workload, Sched
     {
         if (computer->cpu->cores[i]->switchInTimer != -1)
         {
+            //time of end of switch in
             int next_time = currentTime + getSwitchInDuration() - computer->cpu->cores[i]->switchInTimer; //to generalise to any switch in duration
-            time = min(time, next_time);
+            printf("next end switch in %d: time=%d    next_time=%d\n", computer->cpu->cores[i]->PID, time, next_time);
+            time = minTime(time, next_time);
         }
         else if (computer->cpu->cores[i]->switchOutTimer != -1)
         {
+            //time of end of switch out
             int next_time = currentTime + getSwitchInDuration() - computer->cpu->cores[i]->switchInTimer; //to generalise to any switch in duration
-            time = min(time, next_time);
+            printf("next end switch out %d: time=%d    next_time=%d\n", computer->cpu->cores[i]->PID, time, next_time);
+            time = minTime(time, next_time);
+        }
+        else if (computer->cpu->cores[i]->state == OCCUPIED)
+        {
+            //time before beginning of switch out
+            int next_time = getProcessNextEventTime(workload, computer->cpu->cores[i]->PID) + getProcessStartTime(workload, computer->cpu->cores[i]->PID); //need "real" time not of th eprocess
+            printf("next beginning switch out %d: time=%d    next_time=%d\n", computer->cpu->cores[i]->PID, time, next_time);
+            time = minTime(time, next_time);
         }
     }
     return time;

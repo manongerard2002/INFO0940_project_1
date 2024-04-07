@@ -77,6 +77,17 @@ int dequeueSchedulingReadyQueueFCFS(SchedulingReadyQueue *SchedulingReadyQueue);
  */
 int topSchedulingReadyQueueFCFS(SchedulingReadyQueue *SchedulingReadyQueue);
 
+/**
+ * Get all the processes pid from the given SchedulingReadyQueue, without dequeuining them.
+ *
+ * @param SchedulingReadyQueue The SchedulingReadyQueue from which to get the process pid.
+ * @param allProcesses An array where to store the processes pid.
+ * @param indexStart The index of the start of the allProcesses array.
+ * 
+ * @return All the processes pid, or -1 if the SchedulingReadyQueue is empty.
+ */
+int allProcessesInReadyQueue(SchedulingReadyQueue *SchedulingReadyQueue, int *allProcesses, int indexStart);
+
 void printReadyQueue(SchedulingReadyQueue *SchedulingReadyQueue);
 
 #endif // schedulingReadySchedulingReadyQueues_h

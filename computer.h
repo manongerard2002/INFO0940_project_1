@@ -28,8 +28,8 @@ struct Computer_t
 
 typedef enum
 {
-    /*SWITCH_IN,
-    SWITCH_OUT,*/
+    SWITCH_IN,
+    SWITCH_OUT,
     OCCUPIED,//RUNNING,
     IDLE
 } coreState;
