@@ -7,7 +7,8 @@
 typedef struct SchedulingReadyQueue_t SchedulingReadyQueue;
 struct SchedulingReadyQueue_t
 {
-    int *processesIndex;
+    int *processesPID; //need to change this as not acceptable
+    //need to put the "priority" that is currently on the cpu for preemptive
     int head;
     int tail;
     int size; //can fill up to size - 1 to still be able to distinguish fulll and empty
@@ -49,31 +50,33 @@ bool isFullSchedulingReadyQueue(SchedulingReadyQueue *SchedulingReadyQueue);
 
 /*FCFS*/
 /**
- * Adds a process index to the specified SchedulingReadyQueue.
+ * Adds a process pid to the specified SchedulingReadyQueue.
  *
  * @param SchedulingReadyQueue The SchedulingReadyQueue to which the process will be added.
- * @param processIndex The process index to be added to the SchedulingReadyQueue.
+ * @param pid The process pid to be added to the SchedulingReadyQueue.
  * 
  * @return True if the enqueue suceeded
  */
-bool enqueueSchedulingReadyQueueFCFS(SchedulingReadyQueue *SchedulingReadyQueue, int processIndex);
+bool enqueueSchedulingReadyQueueFCFS(SchedulingReadyQueue *SchedulingReadyQueue, int pid);
 
 /**
- * Dequeue SchedulingReadyQueue and returns the first process index from the given SchedulingReadyQueue.
+ * Dequeue SchedulingReadyQueue and returns the first process pid from the given SchedulingReadyQueue.
  *
- * @param SchedulingReadyQueue The SchedulingReadyQueue from which to dequeue the process index.
+ * @param SchedulingReadyQueue The SchedulingReadyQueue from which to dequeue the process pid.
  * 
- * @return The process index, or -1 if the SchedulingReadyQueue is empty.
+ * @return The process pid, or -1 if the SchedulingReadyQueue is empty.
  */
 int dequeueSchedulingReadyQueueFCFS(SchedulingReadyQueue *SchedulingReadyQueue);
 
 /**
- * Get the first process index from the given SchedulingReadyQueue, without dequeuining it.
+ * Get the first process pid from the given SchedulingReadyQueue, without dequeuining it.
  *
- * @param SchedulingReadyQueue The SchedulingReadyQueue from which to get the process index.
+ * @param SchedulingReadyQueue The SchedulingReadyQueue from which to get the process pid.
  * 
- * @return The process index, or -1 if the SchedulingReadyQueue is empty.
+ * @return The process pid, or -1 if the SchedulingReadyQueue is empty.
  */
 int topSchedulingReadyQueueFCFS(SchedulingReadyQueue *SchedulingReadyQueue);
+
+void printReadyQueue(SchedulingReadyQueue *SchedulingReadyQueue);
 
 #endif // schedulingReadySchedulingReadyQueues_h

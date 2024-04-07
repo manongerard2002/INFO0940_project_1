@@ -104,6 +104,13 @@ static void addAllProcessesToStats(AllStats *stats, Workload *workload);
  */
 static int compareProcessStartTime(const void *a, const void *b);
 
+//static
+void advanceNextEvent(Workload *workload, int processIndex);
+
+static int getNextProcessEventTime(Workload *Workload, Scheduler *scheduler);
+
+int minTime(int time, int next_time);
+
 /* -------------------------- getters and setters -------------------------- */
 
 int getProcessCount(const Workload *workload)
@@ -388,7 +395,7 @@ void launchSimulation(Workload *workload, SchedulingAlgorithm **algorithms, int 
     }
     setNbProcessesInStats(stats, getProcessCount(workload));
 
-    Scheduler *scheduler = initScheduler(algorithms, algorithmCount, 0);
+    Scheduler *scheduler = initScheduler(algorithms, algorithmCount, workload->nbProcesses);
     if (!scheduler)
     {
         fprintf(stderr, "Error: could not initialize scheduler\n");
@@ -430,18 +437,77 @@ void launchSimulation(Workload *workload, SchedulingAlgorithm **algorithms, int 
     qsort(workload->processesInfo, workload->nbProcesses, sizeof(ProcessSimulationInfo *), compareProcessStartTime);
 
     int time = 0;
-
-
-    /* Main loop of the simulation.*/
-    while (!workloadOver(workload)) // You probably want to change this condition
+    /*//at max all processes arrive
+    int *processArrivedIndexes = malloc(workload->nbProcesses * sizeof(int));
+    if (!processArrivedIndexes)
     {
-        // TODO
-        break;
+        fprintf(stderr, "Error: could not initialize processIndexes\n");
+        freeDisk(disk);
+        freeCPU(cpu);
+        freeScheduler(scheduler);
+        return;
+    }*/
+    int *cpuCoresIDLE = malloc(cpu->coreCount * sizeof(int));
+    if (!cpuCoresIDLE)
+    {
+        fprintf(stderr, "Error: could not initialize cpuCoresIDLE\n");
+        freeDisk(disk);
+        freeCPU(cpu);
+        freeScheduler(scheduler);
+        return;
     }
 
+    /* Main loop of the simulation.*/
+    while (true)//!workloadOver(workload)) // You probably want to change this condition
+    {
+        printf("---in while time: %d\n", time);
+        printGraph(graph);
+        handleEvents(computer, workload, time, graph, stats);
+
+        //2. Assign processes to resources: This is the step where the main scheduling decisions are made:
+        //choosing what processes to execute next.
+        assignProcessesToResources(computer, workload, time, graph, stats, cpuCoresIDLE);
+
+        //3. Get next event time: Here, the simulator and scheduler will simply check what is the time unit
+        //of the next event in order to jump directly to it in the next step.
+        int nextProcessEventTime = getNextProcessEventTime(workload, scheduler);
+        //int nextSchedulingEventTime = getNextSchedulingEventTime(workload, scheduler);
+        int next_time = nextProcessEventTime;//(nextProcessEventTime, nextSchedulingEventTime);
+        printf("time=%d    next event time= %d\n", time, next_time);
+        /*
+        //4. Advance time to the next event: This is where the progression of time is simulated. The simulator
+        //will update the advancement of the processes in the workload and the scheduler will update its
+        //timers.
+
+        //for (int j = 0; j < getProcessCount(workload); j++)
+        //{
+        //    int pid = getPIDFromWorkload(workload, j);
+        //    int remainingEventTime = getProcessRemainingEventTime(workload, pid);
+        //    if (remainingEventTime <= 0)
+        //    {
+        //        setProcessAdvancementTime(workload, pid, 0);
+        //    }
+        //    else
+        //    {
+        //        int advancement = min(remainingEventTime, time - getProcessStartTime(workload, pid));
+        //        setProcessAdvancementTime(workload, pid, getProcessAdvancementTime(workload, pid) + advancement);
+        //    }
+        //}
+
+        // Updating graph and statistics -> doit etre fait au fur et a mesure
+        //updateGraphAndStats(time, workload, computer, graph, stats);*/
+        
+        //Then the current time can be updated too in order to deal with the next event at the next iteration of the loop.
+        if (next_time == - 1 || time == next_time)
+            break;
+        time = next_time;
+        
+        if (time > 30)
+            break; //to suppress once everything done
+    }
+    //free(processArrivedIndexes);
     freeComputer(computer);
 }
-
 
 /* ---------------------------- static functions --------------------------- */
 
@@ -500,4 +566,40 @@ static int compareProcessStartTime(const void *a, const void *b)
     {
         return 0;
     }
+}
+
+//static 
+void advanceNextEvent(Workload *workload, int pid)
+{
+    int processIndex = getProcessIndex(workload, pid);
+    ProcessEvent *nextEvent = workload->processesInfo[processIndex]->nextEvent->nextEvent;
+    //printf("\nreplacing %d\n", workload->processesInfo[processIndex]->nextEvent->time);
+    free(workload->processesInfo[processIndex]->nextEvent);
+    workload->processesInfo[processIndex]->nextEvent = nextEvent;
+}
+
+static int getNextProcessEventTime(Workload *workload, Scheduler *scheduler)
+{
+    //next event: soit il y a plus rien, process arrive, disk fini, IO ..., CPU
+    int time = -1;
+    for (int i = 0; i < getProcessCount(workload); i++)
+    {
+        int pid = getPIDFromWorkload(workload, i);
+        if (pid != -1)
+        {
+            int next_time = getProcessNextEventTime(workload, pid) + getProcessStartTime(workload, pid); //need "real" time not of th eprocess
+            printf("nextPevent: time=%d    next_time=%d\n", time, next_time);
+            time = minTime(time, next_time);
+        }
+    }
+    //call to getProcessNextEventTime
+    return time;
+}
+
+//to deal with time = -1
+int minTime(int time, int next_time) {
+    if (time < 0)
+        return next_time;
+    else
+        return min(time, next_time);
 }

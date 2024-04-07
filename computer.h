@@ -28,6 +28,9 @@ struct Computer_t
 
 typedef enum
 {
+    /*SWITCH_IN,
+    SWITCH_OUT,*/
+    OCCUPIED,//RUNNING,
     IDLE
 } coreState;
 
@@ -41,14 +44,23 @@ struct CPU_t
 struct Core_t
 {
     coreState state;
+    int PID;
+    int switchInTimer; //-1 when not in switch in
+    int switchOutTimer; //-1 when not in switch out
 };
 
 
 /* ------------------------------ Disk struct ------------------------------ */
 
+/*typedef enum
+{
+    DISK_RUNNING,
+    DISK_IDLE
+} DiskState;*/
+
 struct Disk_t
 {
-    bool isIdle;
+    DiskState state; //like in graph
 };
 
 /* ------------------------- function definitions -------------------------
@@ -94,5 +106,7 @@ Disk *initDisk(void);
  * @param disk The Disk object to be freed.
  */
 void freeDisk(Disk *disk);
+
+void interruptHandler();
 
 #endif // computer_h

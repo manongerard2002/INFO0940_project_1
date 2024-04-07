@@ -22,7 +22,7 @@ int min3(int a, int b, int c)
 }
 
 
-Node *CreateNode(int data, int priority)
+/*Node *CreateNode(int data, int priority)
 {
    Node *node = malloc(sizeof(Node));
 
@@ -66,6 +66,6 @@ void enqueue(Node **head, int newData, int priority)
     last->next = newNode;
     newNode->prev = last;
     return; 
-}
+}*/
 
 

@@ -6,6 +6,7 @@
 #include "graph.h"
 #include "stats.h"
 #include "simulation.h"
+#include "schedulingReadyQueues.h"
 
 // Cannot include computer.h because of circular dependency
 // -> forward declaration of Computer
@@ -30,7 +31,8 @@ int getWaitQueueCount(void);
  * @param readyQueueCount The number of ready queue algorithms in the array.
  * @return A pointer to the initialized Scheduler object.
  */
-Scheduler *initScheduler(SchedulingAlgorithm **readyQueueAlgorithms, int readyQueueCount, int time);
+//ajout nbProcesses: need to be deleted if LL implemented as no limitation in size anymore
+Scheduler *initScheduler(SchedulingAlgorithm **readyQueueAlgorithms, int readyQueueCount, int nbProcesses);
 
 
 /**
@@ -44,11 +46,40 @@ void freeScheduler(Scheduler *scheduler);
 /* -------------------------- scheduling functions ------------------------- */
 
 /**
+ * Put the process in the queue number queueNbr
+*/
+void putProcessInReadyQueue(Scheduler *scheduler, int queueNbr, int pid);
+
+/**
+ * Get the first process pid from the given queues, without dequeuining it.
+ * Performs the First-Come, First-Served (FCFS) scheduling algorithm on the given computer.
+ *
+ * @param SchedulingReadyQueue The SchedulingReadyQueue from which to get the process pid.
+ * 
+ * @return The process pid, or -1 if the SchedulingReadyQueue is empty.
+ * @param computer The computer on which the scheduling algorithm will be performed.
+ * @return The total time taken to complete all processes in the computer.
+ */
+int topReadyQueue(Scheduler *scheduler);
+
+int dequeueReadyQueue(Scheduler *scheduler);
+
+void handleEvents(Computer *computer, Workload *workload, int time, ProcessGraph *graph, AllStats *stats);
+
+/**
+ * Put the processes that arrived in the simulation at that time in the readyqueue
+*/
+void processArrived(Scheduler *scheduler, Workload* workload, int time, ProcessGraph *graph, AllStats *stats);
+
+void assignProcessesToResources(Computer *computer, Workload *workload, int time, ProcessGraph *graph, AllStats *stats, int *cpuCoresIDLE);
+
+void putProcessOnCPU(Computer *computer, int coreIndex, ProcessGraph *graph, int pid, int time);
+/**
  * Performs the First-Come, First-Served (FCFS) scheduling algorithm on the given computer.
  *
  * @param computer The computer on which the scheduling algorithm will be performed.
  * @return The total time taken to complete all processes in the computer.
  */
-int FCFS(Computer *computer);
+int FCFSalgo(Computer *computer);
 
 #endif // schedulingLogic_h

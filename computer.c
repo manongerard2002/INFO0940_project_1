@@ -61,6 +61,8 @@ CPU *initCPU(int coreCount)
             return NULL;
         }
         cpu->cores[i]->state = IDLE;
+        cpu->cores[i]->switchOutTimer = -1;
+        cpu->cores[i]->switchInTimer = -1;
     }
 
     cpu->coreCount = coreCount;
@@ -86,7 +88,7 @@ Disk *initDisk(void)
         return NULL;
     }
 
-    disk->isIdle = true;
+    disk->state = DISK_IDLE;
 
     return disk;
 }
@@ -94,4 +96,12 @@ Disk *initDisk(void)
 void freeDisk(Disk *disk)
 {
     free(disk);
+}
+
+//need args
+void interruptHandler()
+{
+    printf("Interrupt handler");
+    //to do
+    return;
 }

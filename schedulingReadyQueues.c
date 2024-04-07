@@ -12,8 +12,8 @@ SchedulingReadyQueue *initSchedulingReadyQueue(int size)
         return NULL;
     }
 
-    SchedulingReadyQueue->processesIndex = (int *) malloc(size * sizeof(int));
-    if (!SchedulingReadyQueue->processesIndex)
+    SchedulingReadyQueue->processesPID = (int *) malloc(size * sizeof(int)); //to change to a structure
+    if (!SchedulingReadyQueue->processesPID)
     {
         free(SchedulingReadyQueue);
         return NULL;
@@ -36,7 +36,7 @@ bool isFullSchedulingReadyQueue(SchedulingReadyQueue *SchedulingReadyQueue)
     return (SchedulingReadyQueue->tail + 1) % SchedulingReadyQueue->size == SchedulingReadyQueue->head;
 }
 
-bool enqueueSchedulingReadyQueueFCFS(SchedulingReadyQueue *SchedulingReadyQueue, int processIndex)
+bool enqueueSchedulingReadyQueueFCFS(SchedulingReadyQueue *SchedulingReadyQueue, int pid)
 {
     if (isFullSchedulingReadyQueue(SchedulingReadyQueue))
     {
@@ -46,7 +46,7 @@ bool enqueueSchedulingReadyQueueFCFS(SchedulingReadyQueue *SchedulingReadyQueue,
     else
     {
         // SchedulingReadyQueue is not full, insert the element at the tail
-        SchedulingReadyQueue->processesIndex[SchedulingReadyQueue->tail] = processIndex;
+        SchedulingReadyQueue->processesPID[SchedulingReadyQueue->tail] = pid;
         SchedulingReadyQueue->tail = (SchedulingReadyQueue->tail + 1) % SchedulingReadyQueue->size;
     }
     return 0;
@@ -59,11 +59,11 @@ int dequeueSchedulingReadyQueueFCFS(SchedulingReadyQueue *SchedulingReadyQueue)
         return -1;
     }
 
-    int processIndex = SchedulingReadyQueue->processesIndex[SchedulingReadyQueue->head];
+    int pid = SchedulingReadyQueue->processesPID[SchedulingReadyQueue->head];
     // Update front considering wrapping around
     SchedulingReadyQueue->head = (SchedulingReadyQueue->head + 1) % SchedulingReadyQueue->size;
 
-    return processIndex;
+    return pid;
 }
 
 int topSchedulingReadyQueueFCFS(SchedulingReadyQueue *SchedulingReadyQueue)
@@ -73,7 +73,17 @@ int topSchedulingReadyQueueFCFS(SchedulingReadyQueue *SchedulingReadyQueue)
         return -1;
     }
 
-    int processIndex = SchedulingReadyQueue->processesIndex[SchedulingReadyQueue->head];
+    int pid = SchedulingReadyQueue->processesPID[SchedulingReadyQueue->head];
 
-    return processIndex;
+    return pid;
+}
+
+void printReadyQueue(SchedulingReadyQueue *SchedulingReadyQueue)
+{
+    printf("printReadyQueue\n");
+    for (int i = SchedulingReadyQueue->head; i < SchedulingReadyQueue->tail; i++)
+    {
+        printf("%d\n", SchedulingReadyQueue->processesPID[i]);
+    }
+    printf("\n");
 }
