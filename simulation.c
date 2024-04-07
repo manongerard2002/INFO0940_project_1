@@ -105,9 +105,9 @@ static void addAllProcessesToStats(AllStats *stats, Workload *workload);
 static int compareProcessStartTime(const void *a, const void *b);
 
 //static
-void advanceNextEvent(Workload *workload, int processIndex);
+void advanceNextEvent(Workload *workload, int pid);
 
-static int getNextProcessEventTime(Workload *Workload, Scheduler *scheduler);
+static int getNextProcessEventTime(Computer *computer, Workload *Workload, Scheduler *scheduler, int currentTime);
 
 int minTime(int time, int next_time);
 
@@ -460,7 +460,7 @@ void launchSimulation(Workload *workload, SchedulingAlgorithm **algorithms, int 
     /* Main loop of the simulation.*/
     while (true)//!workloadOver(workload)) // You probably want to change this condition
     {
-        printf("---in while time: %d\n", time);
+        printf("---in while time: %d--------------------------------------------\n", time);
         printGraph(graph);
         handleEvents(computer, workload, time, graph, stats);
 
@@ -470,31 +470,31 @@ void launchSimulation(Workload *workload, SchedulingAlgorithm **algorithms, int 
 
         //3. Get next event time: Here, the simulator and scheduler will simply check what is the time unit
         //of the next event in order to jump directly to it in the next step.
-        int nextProcessEventTime = getNextProcessEventTime(workload, scheduler);
-        //int nextSchedulingEventTime = getNextSchedulingEventTime(workload, scheduler);
-        int next_time = nextProcessEventTime;//(nextProcessEventTime, nextSchedulingEventTime);
+        int nextProcessEventTime = getNextProcessEventTime(computer, workload, scheduler, time);
+        int nextSchedulingEventTime = getNextSchedulingEventTime(computer, workload, scheduler);
+        int next_time = minTime(nextProcessEventTime, nextSchedulingEventTime);
         printf("time=%d    next event time= %d\n", time, next_time);
-        /*
+
         //4. Advance time to the next event: This is where the progression of time is simulated. The simulator
         //will update the advancement of the processes in the workload and the scheduler will update its
         //timers.
 
-        //for (int j = 0; j < getProcessCount(workload); j++)
-        //{
-        //    int pid = getPIDFromWorkload(workload, j);
-        //    int remainingEventTime = getProcessRemainingEventTime(workload, pid);
-        //    if (remainingEventTime <= 0)
-        //    {
-        //        setProcessAdvancementTime(workload, pid, 0);
-        //    }
-        //    else
-        //    {
-        //        int advancement = min(remainingEventTime, time - getProcessStartTime(workload, pid));
-        //        setProcessAdvancementTime(workload, pid, getProcessAdvancementTime(workload, pid) + advancement);
-        //    }
-        //}
+        for (int j = 0; j < getProcessCount(workload); j++)
+        {
+            int pid = getPIDFromWorkload(workload, j);
+            int remainingEventTime = getProcessCurEventTimeLeft(workload, pid);
+            if (remainingEventTime <= 0)
+            {
+                setProcessAdvancementTime(workload, pid, 0);
+            }
+            else
+            {
+                int advancement = min(remainingEventTime, time - getProcessStartTime(workload, pid));
+                setProcessAdvancementTime(workload, pid, getProcessAdvancementTime(workload, pid) + advancement);
+            }
+        }
 
-        // Updating graph and statistics -> doit etre fait au fur et a mesure
+        /*// Updating graph and statistics -> doit etre fait au fur et a mesure je pense
         //updateGraphAndStats(time, workload, computer, graph, stats);*/
         
         //Then the current time can be updated too in order to deal with the next event at the next iteration of the loop.
@@ -578,9 +578,24 @@ void advanceNextEvent(Workload *workload, int pid)
     workload->processesInfo[processIndex]->nextEvent = nextEvent;
 }
 
-static int getNextProcessEventTime(Workload *workload, Scheduler *scheduler)
+//Here or in simulation.c
+void processArrived(Scheduler *scheduler, Workload *workload, int time, ProcessGraph *graph, AllStats *stats)
 {
-    //next event: soit il y a plus rien, process arrive, disk fini, IO ..., CPU
+    for (int i = 0; i < getProcessCount(workload); i++)
+    {
+        int pid = getPIDFromWorkload(workload, i);
+        if (getProcessStartTime(workload, pid) == time) {
+            printf("process %d Arrived at time %d\n", i, time);
+            putProcessInReadyQueue(scheduler, 0, pid);
+            getProcessStats(stats, pid)->arrivalTime=time;
+            advanceNextEvent(workload, pid);
+        }
+    }
+}
+
+static int getNextProcessEventTime(Computer *computer, Workload *workload, Scheduler *scheduler, int currentTime)
+{
+    //next event: soit il y a plus rien (-1), process arrive, disk fini, IO ..., CPU
     int time = -1;
     for (int i = 0; i < getProcessCount(workload); i++)
     {
@@ -592,7 +607,20 @@ static int getNextProcessEventTime(Workload *workload, Scheduler *scheduler)
             time = minTime(time, next_time);
         }
     }
-    //call to getProcessNextEventTime
+    //cpu: switch-in/out
+    for (int i = 0; i < computer->cpu->coreCount; i++)
+    {
+        if (computer->cpu->cores[i]->switchInTimer != -1)
+        {
+            int next_time = currentTime + getSwitchInDuration() - computer->cpu->cores[i]->switchInTimer; //to generalise to any switch in duration
+            time = min(time, next_time);
+        }
+        else if (computer->cpu->cores[i]->switchOutTimer != -1)
+        {
+            int next_time = currentTime + getSwitchInDuration() - computer->cpu->cores[i]->switchInTimer; //to generalise to any switch in duration
+            time = min(time, next_time);
+        }
+    }
     return time;
 }
 
@@ -600,6 +628,8 @@ static int getNextProcessEventTime(Workload *workload, Scheduler *scheduler)
 int minTime(int time, int next_time) {
     if (time < 0)
         return next_time;
+    else if (next_time < 0)
+        return time;
     else
         return min(time, next_time);
 }

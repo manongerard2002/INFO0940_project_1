@@ -101,28 +101,41 @@ void handleEvents(Computer *computer, Workload *workload, int time, ProcessGraph
     //1. Handle event(s): simulator and the scheduler check if an event is triggered at the current time unit and handle it
     //Ex: if a process arrives in the system, the simulator will call the scheduler to put the process in the ready queue.
     printf("beginning of handleEvents\n");
-    printReadyQueue(computer->scheduler->readyQueues[0]);
     processArrived(computer->scheduler, workload, time, graph, stats);
     
     printReadyQueue(computer->scheduler->readyQueues[0]);
-    printf("end of handleEvents\n");
     //Ex: event = scheduling events, such as a process needing to move to an upper queue because of aging
-    //Ex: event = hardware events, such as the triggering of an interrupt.
-}
 
-//Here or in simulation.c
-void processArrived(Scheduler *scheduler, Workload *workload, int time, ProcessGraph *graph, AllStats *stats)
-{
-    for (int i = 0; i < getProcessCount(workload); i++)
+    for (int j = 0; j < getProcessCount(workload); j++)
     {
-        int pid = getPIDFromWorkload(workload, i);
-        if (getProcessStartTime(workload, pid) == time) {
-            printf("process %d Arrived at time %d\n", i, time);
-            putProcessInReadyQueue(scheduler, 0, pid);
-            getProcessStats(stats, pid)->arrivalTime=time;
-            advanceNextEvent(workload, pid);
+        int pid = getPIDFromWorkload(workload, j);
+        if (getProcessStartTime(workload, pid) > time)
+        {
+            int remainingEventTime = getProcessCurEventTimeLeft(workload, pid);
+            if (remainingEventTime <= 0)
+            {
+                printf("need to deal with finish op for pid:%d\n", pid);
+            }
         }
     }
+
+    //cpu: switch-in/out
+    for (int i = 0; i < computer->cpu->coreCount; i++)
+    {
+        if (computer->cpu->cores[i]->switchInTimer == getSwitchInDuration())
+        {
+            printf("switch-in finshed\n");
+            //computer->cpu->cores[i]->state = OCCUPIED;
+            addProcessEventToGraph(graph, computer->cpu->cores[i]->PID, time, RUNNING, i);
+        }
+        else if (computer->cpu->cores[i]->switchOutTimer == getSwitchOutDuration())
+        {
+            printf("switch-out finshed\n");
+            computer->cpu->cores[i]->state = IDLE;
+            //put it were it should go
+        }
+    }
+    //Ex: event = hardware events, such as the triggering of an interrupt.
 }
 
 void assignProcessesToResources(Computer *computer, Workload *workload, int time, ProcessGraph *graph, AllStats *stats, int *cpuCoresIDLE)
@@ -163,6 +176,13 @@ void putProcessOnCPU(Computer *computer, int coreIndex, ProcessGraph *graph, int
     computer->cpu->cores[coreIndex]->state = OCCUPIED;
     computer->cpu->cores[coreIndex]->switchInTimer = 0; // start timer
     addProcessEventToGraph(graph, pid, time, READY, coreIndex);
+}
+
+//Here or in simulation.c
+int getNextSchedulingEventTime(Computer *computer, Workload *workload, Scheduler *scheduler)
+{
+    int time = -1;
+    return time;
 }
 
 /*int FCFSalgo(Computer *computer)

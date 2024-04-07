@@ -107,6 +107,10 @@ Disk *initDisk(void);
  */
 void freeDisk(Disk *disk);
 
+int getSwitchInDuration();
+
+int getSwitchOutDuration();
+
 void interruptHandler();
 
 #endif // computer_h

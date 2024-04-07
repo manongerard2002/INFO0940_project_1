@@ -98,6 +98,14 @@ void freeDisk(Disk *disk)
     free(disk);
 }
 
+int getSwitchInDuration() {
+    return SWITCH_IN_DURATION;
+}
+
+int getSwitchOutDuration() {
+    return SWITCH_OUT_DURATION;
+}
+
 //need args
 void interruptHandler()
 {
