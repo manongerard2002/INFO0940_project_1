@@ -130,6 +130,9 @@ void handleEvents(Computer *computer, Workload *workload, int time, ProcessGraph
     //cpu: switch-in/out
     for (int i = 0; i < computer->cpu->coreCount; i++)
     {
+        printCPUStates(computer->cpu);
+        printf("------------getProcessCurEventTimeLeft(workload, computer->cpu->cores[i]->PID) = %d, getProcessCurEventTimeLeft(workload, computer->cpu->cores[i]->PID) == 0 = %d\n", getProcessCurEventTimeLeft(workload, computer->cpu->cores[i]->PID), getProcessCurEventTimeLeft(workload, computer->cpu->cores[i]->PID) == 0);
+        printf("------------getProcessNextEventTime(workload, computer->cpu->cores[i]->PID) = %d, getProcessAdvancementTime(workload, computer->cpu->cores[i]->PID) = %d\n", getProcessNextEventTime(workload, computer->cpu->cores[i]->PID), getProcessAdvancementTime(workload, computer->cpu->cores[i]->PID));
         int pid = computer->cpu->cores[i]->PID;
         if (computer->cpu->cores[i]->switchInTimer == getSwitchInDuration())
         {
@@ -138,12 +141,33 @@ void handleEvents(Computer *computer, Workload *workload, int time, ProcessGraph
             computer->cpu->cores[i]->switchInTimer = -1;
             addProcessEventToGraph(graph, pid, time, RUNNING, i);
         }
-        else if (computer->cpu->cores[i]->switchOutTimer == getSwitchOutDuration())
+        else if (computer->cpu->cores[i]->switchOutTimer == getSwitchOutDuration()) // => state == switch_out
         {
             printf("switch-out finished\n");
             computer->cpu->cores[i]->state = IDLE;
             computer->cpu->cores[i]->switchOutTimer = -1;
             //put it were it should go: and there update graph
+        }
+        else if (computer->cpu->cores[i]->state == OCCUPIED && getProcessCurEventTimeLeft(workload, computer->cpu->cores[i]->PID) == 0) //terminated
+        {
+            printf("process might be terminated/begins switch out: %d   \n", time);
+            int pid = computer->cpu->cores[i]->PID;
+            bool terminated = (getProcessAdvancementTime(workload, pid) + 1 == getProcessDuration(workload, pid));
+            if (terminated)
+            {
+                printf("process %d terminated: do nothing here\n", pid);
+                //process can "disappear"
+            }
+            else {
+                //start switch out/terminated
+                printf("process %d starts switch-out\n", pid);
+                computer->cpu->cores[i]->state = SWITCH_OUT;
+                computer->cpu->cores[i]->switchOutTimer = 0; // start timer
+                addProcessEventToGraph(graph, pid, time, READY, i);
+                //getProcessStats(stats, pid)->cpuTime=getProcessStats(stats, pid)->cpuTime+1; //no: switch out does not count
+                //need to understand
+                //getProcessStats(stats, pid)->nbContextSwitches=getProcessStats(stats, pid)->nbContextSwitches+1;
+            }
         }
     }
 
@@ -207,7 +231,7 @@ void putProcessOnCPU(Computer *computer, int coreIndex, ProcessGraph *graph, int
     computer->cpu->cores[coreIndex]->switchInTimer = 0; // start timer
     computer->cpu->cores[coreIndex]->PID = pid;
     addProcessEventToGraph(graph, pid, time, READY, coreIndex);
-    getProcessStats(stats, pid)->cpuTime=getProcessStats(stats, pid)->cpuTime+1;
+    //getProcessStats(stats, pid)->cpuTime=getProcessStats(stats, pid)->cpuTime+1; //no: switch in does not count
     getProcessStats(stats, pid)->nbContextSwitches=getProcessStats(stats, pid)->nbContextSwitches+1;
 }
 
@@ -215,10 +239,11 @@ void putProcessOnCPU(Computer *computer, int coreIndex, ProcessGraph *graph, int
 int getNextSchedulingEventTime(Computer *computer, Workload *workload, Scheduler *scheduler)
 {
     int time = -1;
+    ///deal with multi-thread
     return time;
 }
 
-void updateGraphAndStats(int time, int next_time, Workload *workload, Computer *computer, ProcessGraph *graph, AllStats *stats, int* allProcesses) {
+void advanceTimeProcessInQueue(int time, int next_time, Computer *computer, ProcessGraph *graph, AllStats *stats, int* allProcesses) {
     int delta_time = next_time - time;
     printf("\nupdateGraphAndStats: time=%d    next_time=%d     delta_time=%d\n",time, next_time, delta_time);
     //update in the readyqueue
@@ -231,51 +256,9 @@ void updateGraphAndStats(int time, int next_time, Workload *workload, Computer *
         {
             addProcessEventToGraph(graph, pid, j, READY, i);
         }
+        printf("%f", (double) getProcessStats(stats, pid)->waitingTime/(getProcessStats(stats, pid)->nbContextSwitches+1));
         getProcessStats(stats, pid)->waitingTime=getProcessStats(stats, pid)->waitingTime+delta_time;
     }
-
-    //update in the cpu
-    for (int i = 0; i < computer->cpu->coreCount; i++)
-    {
-        if (computer->cpu->cores[i]->state == OCCUPIED)
-        {
-            int pid = computer->cpu->cores[i]->PID;
-            printf("selected process: %d in occuped cpu\n", pid);
-            for(int j = time; j < next_time; j++)
-            {
-                addProcessEventToGraph(graph, pid, j, RUNNING, i);
-            }
-            getProcessStats(stats, pid)->cpuTime=getProcessStats(stats, pid)->cpuTime+delta_time;
-
-            bool terminated = getProcessNextEventTime(workload, pid) == getProcessDuration(workload, pid);
-            if (!terminated)
-            {
-                printf("process %d terminated", pid);
-                getProcessStats(stats, pid)->finishTime=next_time;
-            }
-        }
-        else if (computer->cpu->cores[i]->state == SWITCH_IN)
-        {
-            int pid = computer->cpu->cores[i]->PID;
-            printf("selected process: %d in switch in cpu\n", pid);
-            for(int j = time + 1; j < next_time; j++)
-            {
-                addProcessEventToGraph(graph, pid, j, READY, i);
-            }
-            getProcessStats(stats, pid)->cpuTime=getProcessStats(stats, pid)->cpuTime+delta_time;
-        }
-        else if (computer->cpu->cores[i]->state == SWITCH_OUT)
-        {
-            int pid = computer->cpu->cores[i]->PID;
-            printf("selected process: %d in switch out cpu\n", pid);
-            for(int j = time + 1; j < next_time; j++)
-            {
-                addProcessEventToGraph(graph, pid, j, READY, i);
-            }
-            getProcessStats(stats, pid)->cpuTime=getProcessStats(stats, pid)->cpuTime+delta_time;
-        }
-    }
-    //update in the disk
 }
 
 /*int FCFSalgo(Computer *computer)

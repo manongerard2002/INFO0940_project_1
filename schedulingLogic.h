@@ -79,7 +79,7 @@ void putProcessOnCPU(Computer *computer, int coreIndex, ProcessGraph *graph, int
 
 int getNextSchedulingEventTime(Computer *computer, Workload *workload, Scheduler *scheduler);
 
-void updateGraphAndStats(int time, int next_time, Workload *workload, Computer *computer, ProcessGraph *graph, AllStats *stats, int *allProcesses);
+void advanceTimeProcessInQueue(int time, int next_time, Computer *computer, ProcessGraph *graph, AllStats *stats, int* allProcesses);
 
 /**
  * Performs the First-Come, First-Served (FCFS) scheduling algorithm on the given computer.

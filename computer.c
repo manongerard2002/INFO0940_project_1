@@ -9,6 +9,9 @@
 #include "computer.h"
 #include "schedulingLogic.h"
 
+
+#include <string.h> //for debugging: to remove after
+
 #define INTERRUPT_TIME 1
 
 Computer *initComputer(Scheduler *scheduler, CPU *cpu, Disk *disk)
@@ -112,4 +115,25 @@ void interruptHandler()
     printf("Interrupt handler");
     //to do
     return;
+}
+
+
+//debug:
+const char* stateToString(coreState state) {
+    switch (state) {
+        case SWITCH_IN:
+            return "SWITCH_IN";
+        case SWITCH_OUT:
+            return "SWITCH_OUT";
+        case OCCUPIED:
+            return "OCCUPIED";
+        default:
+            return "NOT A STATE: HUGE ERROR";
+    }
+}
+void printCPUStates(CPU *cpu) {
+    for (int i = 0; i < cpu->coreCount; i++)
+    {
+        printf("core %d, at state %s\n", i, stateToString(cpu->cores[i]->state));
+    }
 }

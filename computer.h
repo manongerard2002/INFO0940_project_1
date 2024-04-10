@@ -113,4 +113,10 @@ int getSwitchOutDuration();
 
 void interruptHandler();
 
+
+// debug: to remove after
+//debug:
+const char* stateToString(coreState state);
+void printCPUStates(CPU *cpu);
+
 #endif // computer_h
