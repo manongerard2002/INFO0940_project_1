@@ -61,6 +61,8 @@ PCB *topReadyQueue(Scheduler *scheduler);
 
 PCB *dequeueReadyQueue(Scheduler *scheduler);
 
+bool processInReadyQueues(Scheduler *scheduler, int pid);
+
 //int allProcessesInReadyQueues(Scheduler *scheduler, int* allProcesses);
 
 void handleProcessForCPUArrived(Scheduler *scheduler, PCB *pcb);

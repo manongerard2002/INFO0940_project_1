@@ -772,11 +772,14 @@ void advanceTime(int time, int next_time, Workload *workload, Computer *computer
         {
             case READY:
                 //Process ready by default => need to differenciate
-                // * READY: process not started
-                // * READY: process in readyQueue
+                // * READY: process not started: no graph
+                // * READY: process in readyQueue: update graph/stats
+                // * READY: process in switch-in/switch-out
+                // * READY: process interrupted
                 if (getProcessStartTime(workload, pid) <= time)
                 {
-                    getProcessStats(stats, pid)->waitingTime += delta_time;
+                    if (processInReadyQueues(computer->scheduler, pid))
+                        getProcessStats(stats, pid)->waitingTime += delta_time;
                     addProcessEventToGraph(graph, pid, time, state, NO_CORE);
                 }
                 break;
@@ -810,27 +813,9 @@ void advanceTime(int time, int next_time, Workload *workload, Computer *computer
         /*if (computer->cpu->cores[i]->state == OCCUPIED)
         {
             int pid = computer->cpu->cores[i]->pcb->pid;
+            getProcessStats(stats, pid)->waitingTime += delta_time;
             printf("\nselected process: %d in occuped cpu\n", pid);
-            addProcessEventToGraph(graph, pid, next_time, RUNNING, i);
-            getProcessStats(stats, pid)->cpuTime=getProcessStats(stats, pid)->cpuTime+delta_time;
-            printf("advance time: getProcessAdvancementTime(workload, %d)=%d\n", i, getProcessAdvancementTime(workload, pid));
-            setProcessAdvancementTime(workload, pid, getProcessAdvancementTime(workload, pid) + delta_time);
 
-            //getProcessAdvancementTime ou getProcessNextEventTime
-            bool terminated = (getProcessAdvancementTime(workload, pid) == getProcessDuration(workload, pid));
-            if (!terminated)
-            {
-                computer->cpu->cores[i]->state = IDLE;//release the cpu
-                computer->cpu->cores[i]->pcb->pid = -1;//release the cpu
-                printf("process %d terminated: do nothing   - advancement time= %d   %d   %d \n", pid, getProcessAdvancementTime(workload, pid) , getProcessDuration(workload, pid), getProcessAdvancementTime(workload, pid) == getProcessDuration(workload, pid));
-                setProcessAdvancementTime(workload, pid, getProcessAdvancementTime(workload, pid) + 1);
-                printf("advance time: getProcessAdvancementTime(workload, %d)=%d\n", i, getProcessAdvancementTime(workload, pid));
-                getProcessStats(stats, pid)->finishTime=time;
-                getProcessStats(stats, pid)->turnaroundTime=time-getProcessStats(stats, pid)->arrivalTime; //finish-arrival
-                //getProcessStats(stats, pid)->finishTime=next_time;
-                getProcessStats(stats, pid)->meanResponseTime=(double)getProcessStats(stats, pid)->waitingTime/(getProcessStats(stats, pid)->nbContextSwitches+1);
-                addProcessEventToGraph(graph, pid, time, TERMINATED, NO_CORE);
-            }
         }
         else*/ if (computer->cpu->cores[i]->state == SWITCH_IN)
         {

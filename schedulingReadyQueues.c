@@ -78,6 +78,16 @@ PCB *topSchedulingReadyQueueFCFS(SchedulingReadyQueue *SchedulingReadyQueue)
     return pcb;
 }
 
+bool processInReadyQueue(SchedulingReadyQueue *SchedulingReadyQueue, int pid) {
+    int i = SchedulingReadyQueue->head;
+    while (i != SchedulingReadyQueue->tail) {
+        if (SchedulingReadyQueue->processesPCB[i]->pid == pid)
+            return 1;
+        i = (i + 1) % SchedulingReadyQueue->size;
+    }
+    return 0;
+}
+
 /*int allProcessesInReadyQueue(SchedulingReadyQueue *SchedulingReadyQueue, int *ProcessesInReadyQueues, int indexStart) {
     int i = SchedulingReadyQueue->head;
     while (i != SchedulingReadyQueue->tail) {

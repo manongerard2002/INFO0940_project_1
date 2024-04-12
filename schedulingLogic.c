@@ -95,6 +95,16 @@ PCB *dequeueReadyQueue(Scheduler *scheduler) {
     return NULL;
 }
 
+bool processInReadyQueues(Scheduler *scheduler, int pid) {
+    for (int i=0; i < scheduler->readyQueueCount; i++)
+    {
+        printf("processInReadyQueues\n");
+        if (processInReadyQueue(scheduler->readyQueues[i], pid))
+            return 1;
+    }
+    return 0;
+}
+
 /*int allProcessesInReadyQueues(Scheduler *scheduler, int* ProcessesInReadyQueues) {
     int indexStart = 0;
     for (int i = 0; i < scheduler->readyQueueCount; i++)

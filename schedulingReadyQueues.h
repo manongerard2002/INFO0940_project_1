@@ -78,6 +78,8 @@ PCB *dequeueSchedulingReadyQueueFCFS(SchedulingReadyQueue *SchedulingReadyQueue)
  */
 PCB *topSchedulingReadyQueueFCFS(SchedulingReadyQueue *SchedulingReadyQueue);
 
+bool processInReadyQueue(SchedulingReadyQueue *SchedulingReadyQueue, int pid);
+
 /**
  * Get all the processes pid from the given SchedulingReadyQueue, without dequeuining them.
  *
