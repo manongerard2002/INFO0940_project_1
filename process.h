@@ -10,7 +10,7 @@ typedef enum
     TERMINATED
 } ProcessState;
 
-typedef struct PCB_t PCB;
+typedef struct PCB_t  PCB;
 
 struct PCB_t
 {

@@ -12,8 +12,8 @@ SchedulingReadyQueue *initSchedulingReadyQueue(int size)
         return NULL;
     }
 
-    SchedulingReadyQueue->processesPID = (int *) malloc(size * sizeof(int)); //to change to a structure
-    if (!SchedulingReadyQueue->processesPID)
+    SchedulingReadyQueue->processesPCB = (PCB **) malloc(size * sizeof(PCB *)); //to change to a structure
+    if (!SchedulingReadyQueue->processesPCB)
     {
         free(SchedulingReadyQueue);
         return NULL;
@@ -36,7 +36,7 @@ bool isFullSchedulingReadyQueue(SchedulingReadyQueue *SchedulingReadyQueue)
     return (SchedulingReadyQueue->tail + 1) % SchedulingReadyQueue->size == SchedulingReadyQueue->head;
 }
 
-bool enqueueSchedulingReadyQueueFCFS(SchedulingReadyQueue *SchedulingReadyQueue, int pid)
+bool enqueueSchedulingReadyQueueFCFS(SchedulingReadyQueue *SchedulingReadyQueue, PCB *pcb)
 {
     if (isFullSchedulingReadyQueue(SchedulingReadyQueue))
     {
@@ -46,54 +46,56 @@ bool enqueueSchedulingReadyQueueFCFS(SchedulingReadyQueue *SchedulingReadyQueue,
     else
     {
         // SchedulingReadyQueue is not full, insert the element at the tail
-        SchedulingReadyQueue->processesPID[SchedulingReadyQueue->tail] = pid;
+        SchedulingReadyQueue->processesPCB[SchedulingReadyQueue->tail] = pcb;
         SchedulingReadyQueue->tail = (SchedulingReadyQueue->tail + 1) % SchedulingReadyQueue->size;
     }
     return 0;
 }
 
-int dequeueSchedulingReadyQueueFCFS(SchedulingReadyQueue *SchedulingReadyQueue)
+PCB *dequeueSchedulingReadyQueueFCFS(SchedulingReadyQueue *SchedulingReadyQueue)
 {
     if (isEmptySchedulingReadyQueue(SchedulingReadyQueue))
     {
-        return -1;
+        return NULL;
     }
 
-    int pid = SchedulingReadyQueue->processesPID[SchedulingReadyQueue->head];
+    PCB *pcb = SchedulingReadyQueue->processesPCB[SchedulingReadyQueue->head];
     // Update front considering wrapping around
     SchedulingReadyQueue->head = (SchedulingReadyQueue->head + 1) % SchedulingReadyQueue->size;
 
-    return pid;
+    return pcb;
 }
 
-int topSchedulingReadyQueueFCFS(SchedulingReadyQueue *SchedulingReadyQueue)
+PCB *topSchedulingReadyQueueFCFS(SchedulingReadyQueue *SchedulingReadyQueue)
 {
     if (isEmptySchedulingReadyQueue(SchedulingReadyQueue))
     {
-        return -1;
+        return NULL;
     }
 
-    int pid = SchedulingReadyQueue->processesPID[SchedulingReadyQueue->head];
+    PCB *pcb = SchedulingReadyQueue->processesPCB[SchedulingReadyQueue->head];
 
-    return pid;
+    return pcb;
 }
 
-int allProcessesInReadyQueue(SchedulingReadyQueue *SchedulingReadyQueue, int *allProcesses, int indexStart) {
+/*int allProcessesInReadyQueue(SchedulingReadyQueue *SchedulingReadyQueue, int *ProcessesInReadyQueues, int indexStart) {
     int i = SchedulingReadyQueue->head;
     while (i != SchedulingReadyQueue->tail) {
-        allProcesses[indexStart] = SchedulingReadyQueue->processesPID[i];
+        ProcessesInReadyQueues[indexStart] = SchedulingReadyQueue->processesPCB[i];
         indexStart++;
         i = (i + 1) % SchedulingReadyQueue->size;
     }
     return indexStart;
-}
+}*/
 
 void printReadyQueue(SchedulingReadyQueue *SchedulingReadyQueue)
 {
     printf("printReadyQueue: ");
     int i = SchedulingReadyQueue->head;
     while (i != SchedulingReadyQueue->tail) {
-        printf("%d  ", SchedulingReadyQueue->processesPID[i]);
+        printf("pid %d - state ", SchedulingReadyQueue->processesPCB[i]->pid);
+        ProcessStateToString(SchedulingReadyQueue->processesPCB[i]->state); //bug ?
+        printf("priority %d", SchedulingReadyQueue->processesPCB[i]->priority);
         i = (i + 1) % SchedulingReadyQueue->size;
     }
     printf("\n");

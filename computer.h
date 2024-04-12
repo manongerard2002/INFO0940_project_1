@@ -8,7 +8,7 @@
 #include "schedulingLogic.h"
 
 #define SWITCH_OUT_DURATION 2 // Duration of the context switch out
-#define SWITCH_IN_DURATION 1  // Duration of the context switch in
+#define SWITCH_IN_DURATION 1 // Duration of the context switch in
 
 typedef struct CPU_t CPU;
 typedef struct Core_t Core;
@@ -44,7 +44,7 @@ struct CPU_t
 struct Core_t
 {
     coreState state;
-    int PID;
+    PCB *pcb;
     int switchInTimer; //-1 when not in switch in
     int switchOutTimer; //-1 when not in switch out
 };
@@ -116,7 +116,7 @@ void interruptHandler();
 
 // debug: to remove after
 //debug:
-const char* stateToString(coreState state);
+const char* CPUstateToString(coreState state);
 void printCPUStates(CPU *cpu);
 
 #endif // computer_h

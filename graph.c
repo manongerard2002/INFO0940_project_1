@@ -114,7 +114,6 @@ void addProcessToGraph(ProcessGraph *graph, int processId)
 
 void addProcessEventToGraph(ProcessGraph *graph, int processId, int time, ProcessState state, int coreId)
 {
-    printf("--add in graph: pid=%d  time=%d, state=%d, coreId=%d\n", processId, time, state, coreId);
     Event *event = createNewEventForGraph(graph, time);
     if (!event)
     {

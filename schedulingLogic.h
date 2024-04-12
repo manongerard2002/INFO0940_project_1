@@ -48,39 +48,26 @@ void freeScheduler(Scheduler *scheduler);
 /**
  * Put the process in the queue number queueNbr
 */
-void putProcessInReadyQueue(Scheduler *scheduler, int queueNbr, int pid);
+void putProcessInReadyQueue(Scheduler *scheduler, int queueNbr, PCB *pcb);
 
 /**
  * Get the first process pid from the given queues, without dequeuining it.
- * Performs the First-Come, First-Served (FCFS) scheduling algorithm on the given computer.
  *
- * @param SchedulingReadyQueue The SchedulingReadyQueue from which to get the process pid.
+ * @param scheduler The scheduler.
  * 
- * @return The process pid, or -1 if the SchedulingReadyQueue is empty.
- * @param computer The computer on which the scheduling algorithm will be performed.
- * @return The total time taken to complete all processes in the computer.
+ * @return The process PCB, or NULL if the SchedulingReadyQueue is empty.
  */
-int topReadyQueue(Scheduler *scheduler);
+PCB *topReadyQueue(Scheduler *scheduler);
 
-int dequeueReadyQueue(Scheduler *scheduler);
+PCB *dequeueReadyQueue(Scheduler *scheduler);
 
-int allProcessesInReadyQueues(Scheduler *scheduler, int* allProcesses);
+//int allProcessesInReadyQueues(Scheduler *scheduler, int* allProcesses);
 
-void handleEvents(Computer *computer, Workload *workload, int time, ProcessGraph *graph, AllStats *stats);
+void handleProcessForCPUArrived(Scheduler *scheduler, PCB *pcb);
 
-/**
- * Put the processes that arrived in the simulation at that time in the readyqueue
-*/
-void processArrived(Scheduler *scheduler, Workload* workload, int time, ProcessGraph *graph, AllStats *stats);
+void assignProcessesToResources(Computer *computer, Workload *workload, int time, ProcessGraph *graph, AllStats *stats);
 
-void assignProcessesToResources(Computer *computer, Workload *workload, int time, ProcessGraph *graph, AllStats *stats, int *cpuCoresIDLE);
-
-void putProcessOnCPU(Computer *computer, int coreIndex, ProcessGraph *graph, int pid, int time, AllStats *stats);
-
-int getNextSchedulingEventTime(Computer *computer, Workload *workload, Scheduler *scheduler);
-
-void advanceTimeProcessInQueue(int time, int next_time, Computer *computer, ProcessGraph *graph, AllStats *stats, int* allProcesses);
-
+void putProcessOnCPU(Workload *workload, Computer *computer, int coreIndex, ProcessGraph *graph, PCB *pcb, int time);
 /**
  * Performs the First-Come, First-Served (FCFS) scheduling algorithm on the given computer.
  *

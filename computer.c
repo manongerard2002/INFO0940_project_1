@@ -64,6 +64,7 @@ CPU *initCPU(int coreCount)
             return NULL;
         }
         cpu->cores[i]->state = IDLE;
+        cpu->cores[i]->pcb = NULL;
         cpu->cores[i]->switchOutTimer = -1;
         cpu->cores[i]->switchInTimer = -1;
     }
@@ -106,6 +107,7 @@ int getSwitchInDuration() {
 }
 
 int getSwitchOutDuration() {
+    printf("switch out duration %d --------------------------", SWITCH_OUT_DURATION);
     return SWITCH_OUT_DURATION;
 }
 
@@ -119,7 +121,7 @@ void interruptHandler()
 
 
 //debug:
-const char* stateToString(coreState state) {
+const char* CPUstateToString(coreState state) {
     switch (state) {
         case SWITCH_IN:
             return "SWITCH_IN";
@@ -127,6 +129,8 @@ const char* stateToString(coreState state) {
             return "SWITCH_OUT";
         case OCCUPIED:
             return "OCCUPIED";
+        case IDLE:
+            return "IDLE";
         default:
             return "NOT A STATE: HUGE ERROR";
     }
@@ -134,6 +138,8 @@ const char* stateToString(coreState state) {
 void printCPUStates(CPU *cpu) {
     for (int i = 0; i < cpu->coreCount; i++)
     {
-        printf("core %d, at state %s\n", i, stateToString(cpu->cores[i]->state));
+        printf("core %d, at state %s", i, CPUstateToString(cpu->cores[i]->state));
+        if (cpu->cores[i]->pcb)
+            printf(", with pid %d\n", cpu->cores[i]->pcb->pid);
     }
 }

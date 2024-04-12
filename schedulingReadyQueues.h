@@ -2,12 +2,13 @@
 #define schedulingReadySchedulingReadyQueues_h
 
 #include <stdbool.h>
+#include "process.h"
 
 //Probably need a linked list to be able to add in the "middle" when there is priority
 typedef struct SchedulingReadyQueue_t SchedulingReadyQueue;
 struct SchedulingReadyQueue_t
 {
-    int *processesPID; //need to change this as not acceptable
+    PCB **processesPCB; //need to change this as not acceptable
     //need to put the "priority" that is currently on the cpu for preemptive
     int head;
     int tail;
@@ -53,40 +54,40 @@ bool isFullSchedulingReadyQueue(SchedulingReadyQueue *SchedulingReadyQueue);
  * Adds a process pid to the specified SchedulingReadyQueue.
  *
  * @param SchedulingReadyQueue The SchedulingReadyQueue to which the process will be added.
- * @param pid The process pid to be added to the SchedulingReadyQueue.
+ * @param pcb The pcb of the process to be added to the SchedulingReadyQueue.
  * 
  * @return True if the enqueue suceeded
  */
-bool enqueueSchedulingReadyQueueFCFS(SchedulingReadyQueue *SchedulingReadyQueue, int pid);
+bool enqueueSchedulingReadyQueueFCFS(SchedulingReadyQueue *SchedulingReadyQueue, PCB *pcb);
 
 /**
- * Dequeue SchedulingReadyQueue and returns the first process pid from the given SchedulingReadyQueue.
+ * Dequeue SchedulingReadyQueue and returns the first process PCB from the given SchedulingReadyQueue.
  *
  * @param SchedulingReadyQueue The SchedulingReadyQueue from which to dequeue the process pid.
  * 
- * @return The process pid, or -1 if the SchedulingReadyQueue is empty.
+ * @return The process PCB, or NULL if the SchedulingReadyQueue is empty.
  */
-int dequeueSchedulingReadyQueueFCFS(SchedulingReadyQueue *SchedulingReadyQueue);
+PCB *dequeueSchedulingReadyQueueFCFS(SchedulingReadyQueue *SchedulingReadyQueue);
 
 /**
  * Get the first process pid from the given SchedulingReadyQueue, without dequeuining it.
  *
  * @param SchedulingReadyQueue The SchedulingReadyQueue from which to get the process pid.
  * 
- * @return The process pid, or -1 if the SchedulingReadyQueue is empty.
+ * @return The process PCB, or NULL if the SchedulingReadyQueue is empty.
  */
-int topSchedulingReadyQueueFCFS(SchedulingReadyQueue *SchedulingReadyQueue);
+PCB *topSchedulingReadyQueueFCFS(SchedulingReadyQueue *SchedulingReadyQueue);
 
 /**
  * Get all the processes pid from the given SchedulingReadyQueue, without dequeuining them.
  *
  * @param SchedulingReadyQueue The SchedulingReadyQueue from which to get the process pid.
- * @param allProcesses An array where to store the processes pid.
- * @param indexStart The index of the start of the allProcesses array.
+ * @param ProcessesInReadyQueues An array where to store the processes pid.
+ * @param indexStart The index of the start of the ProcessesInReadyQueues array.
  * 
- * @return All the processes pid, or -1 if the SchedulingReadyQueue is empty.
+ * @return All the processes PCB, or -1 if the SchedulingReadyQueue is empty.
  */
-int allProcessesInReadyQueue(SchedulingReadyQueue *SchedulingReadyQueue, int *allProcesses, int indexStart);
+//int allProcessesInReadyQueue(SchedulingReadyQueue *SchedulingReadyQueue, int *ProcessesInReadyQueues, int indexStart);
 
 void printReadyQueue(SchedulingReadyQueue *SchedulingReadyQueue);
 
