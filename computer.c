@@ -157,8 +157,8 @@ void printCPUStates(CPU *cpu) {
     {
         printf("core %d, at state %s", i, CPUstateToString(cpu->cores[i]->state));
         if (cpu->cores[i]->pcb)
-            printf(", with pid %d ", cpu->cores[i]->pcb->pid);
-        printf("s-in = %d, s-out = %d, interrupt=%d\n", cpu->cores[i]->switchInTimer, cpu->cores[i]->switchOutTimer, cpu->cores[i]->interruptTimer);
+            printf(", with pid %d", cpu->cores[i]->pcb->pid);
+        printf(", s-in = %d, s-out = %d, interrupt=%d\n", cpu->cores[i]->switchInTimer, cpu->cores[i]->switchOutTimer, cpu->cores[i]->interruptTimer);
     }
 }
 

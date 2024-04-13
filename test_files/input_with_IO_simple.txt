@@ -1,2 +1,0 @@
-# pid, start_time, duration, priority, [list of timestamps and events] (IO, CPU)
-1, 0, 10, 1, [(0, CPU), (2, IO), (4, CPU)]
