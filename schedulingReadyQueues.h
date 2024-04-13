@@ -1,5 +1,5 @@
-#ifndef schedulingReadySchedulingReadyQueues_h
-#define schedulingReadySchedulingReadyQueues_h
+#ifndef schedulingReadyQueues_h
+#define schedulingReadyQueues_h
 
 #include <stdbool.h>
 #include "process.h"
@@ -93,4 +93,4 @@ bool processInReadyQueue(SchedulingReadyQueue *SchedulingReadyQueue, int pid);
 
 void printReadyQueue(SchedulingReadyQueue *SchedulingReadyQueue);
 
-#endif // schedulingReadySchedulingReadyQueues_h
+#endif // schedulingReadyQueues_h

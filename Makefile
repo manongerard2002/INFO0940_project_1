@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = --pedantic -Wall -Wextra -Wmissing-prototypes -std=c99
+CFLAGS = --pedantic -Wall -Wextra -Wmissing-prototypes -std=c99 -g
 TARGET = cpuScheduler
 EXAMPLE_TARGET = example
 

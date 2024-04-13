@@ -65,17 +65,27 @@ bool processInReadyQueues(Scheduler *scheduler, int pid);
 
 //int allProcessesInReadyQueues(Scheduler *scheduler, int* allProcesses);
 
-void handleProcessForCPUArrived(Scheduler *scheduler, PCB *pcb);
+//debug
+void printReadyQueues(Scheduler *scheduler);
 
-void assignProcessesToResources(Computer *computer, Workload *workload, int time, ProcessGraph *graph, AllStats *stats);
+void handleProcessForCPU(Scheduler *scheduler, PCB *pcb);
 
-void putProcessOnCPU(Workload *workload, Computer *computer, int coreIndex, ProcessGraph *graph, PCB *pcb, int time);
+void handleProcessForDisk(Scheduler *scheduler, PCB *pcb);
+
+void assignProcessesToResources(Computer *computer, Workload *workload);
+
+void putProcessOnCPU(Workload *workload, Computer *computer, int coreIndex, PCB *pcb);
+
+void putProcessOnDisk(Workload *workload, Computer *computer, PCB *pcb);
+
+void advanceSchedulingTime(int time, int next_time, Computer *computer);
+
 /**
  * Performs the First-Come, First-Served (FCFS) scheduling algorithm on the given computer.
  *
  * @param computer The computer on which the scheduling algorithm will be performed.
  * @return The total time taken to complete all processes in the computer.
  */
-int FCFSalgo(Computer *computer);
+//int FCFSalgo(Computer *computer);
 
 #endif // schedulingLogic_h

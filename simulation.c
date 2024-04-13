@@ -124,7 +124,7 @@ static int getNextProcessEventTime(Workload *Workload, Scheduler *scheduler);
 
 static void processArrived(Scheduler *scheduler, Workload *workload, int time, AllStats *stats);
 
-static void advanceTime(int time, int next_time, Workload *workload, Computer *computer, ProcessGraph *graph, AllStats *stats);
+static void advanceProcessTime(int time, int next_time, Workload *workload, Computer *computer, ProcessGraph *graph, AllStats *stats);
 
 int minTime(int time, int next_time);
 
@@ -479,37 +479,6 @@ void launchSimulation(Workload *workload, SchedulingAlgorithm **algorithms, int 
     //qsort(workload->processesInfo, workload->nbProcesses, sizeof(ProcessSimulationInfo *), compareProcessStartTime);
 
     int time = 0;
-    /*//at max all processes arrive
-    int *processArrivedIndexes = malloc(workload->nbProcesses * sizeof(int));
-    if (!processArrivedIndexes)
-    {
-        fprintf(stderr, "Error: could not initialize processIndexes\n");
-        freeDisk(disk);
-        freeCPU(cpu);
-        freeScheduler(scheduler);
-        return;
-    }*/
-    int *cpuCoresIDLE = malloc(cpu->coreCount * sizeof(int));
-    if (!cpuCoresIDLE)
-    {
-        fprintf(stderr, "Error: could not initialize cpuCoresIDLE\n");
-        freeDisk(disk);
-        freeCPU(cpu);
-        freeScheduler(scheduler);
-        return;
-    }
-
-    //at max nbProcesses on the queue
-    /*int* ProcessesInReadyQueues = malloc(workload->nbProcesses * sizeof(int));
-    if (!ProcessesInReadyQueues)
-    {
-        fprintf(stderr, "Error: could not initialize allProcesses\n");
-        freeDisk(disk);
-        freeCPU(cpu);
-        freeScheduler(scheduler);
-        return;
-    }*/
-
     /* Main loop of the simulation.*/
     while (!workloadOver(workload)) // You probably want to change this condition
     {
@@ -524,7 +493,7 @@ void launchSimulation(Workload *workload, SchedulingAlgorithm **algorithms, int 
 
         //2. Assign processes to resources: This is the step where the main scheduling decisions are made:
         //choosing what processes to execute next.
-        assignProcessesToResources(computer, workload, time, graph, stats);
+        assignProcessesToResources(computer, workload);
 
         /*//3. Get next event time: Here, the simulator and scheduler will simply check what is the time unit
         //of the next event in order to jump directly to it in the next step.
@@ -537,22 +506,29 @@ void launchSimulation(Workload *workload, SchedulingAlgorithm **algorithms, int 
         //will update the advancement of the processes in the workload and the scheduler will update its
         //timers.
         int next_time=time+1; //tmp
-        advanceTime(time, next_time, workload, computer, graph, stats);
+        advanceProcessTime(time, next_time, workload, computer, graph, stats);
+        printf("ended advance Process Time\n");
+        advanceSchedulingTime(time, next_time, computer);
+        printf("ended advance Scheduling time\n");
 
         printStats(stats);
         printGraph(graph);
         printCPUStates(computer->cpu);
+        printDiskStates(computer->disk);
+        printReadyQueues(computer->scheduler);
         
         //Then the current time can be updated too in order to deal with the next event at the next iteration of the loop.
         if (next_time == - 1 || time == next_time)
             break;
         time = next_time;
         
-        if (time > 40)
+        if (time > 50)
             break; //to suppress once everything done
     }
+    printf("after while\n");
     //free(processArrivedIndexes);
     freeComputer(computer);
+    printf("after free computer\n");
 }
 
 /* ---------------------------- static functions --------------------------- */
@@ -563,7 +539,6 @@ static bool workloadOver(const Workload *workload)
     printProcessStates(workload);
     for (int i = 0; i < workload->nbProcesses; i++)
     {
-        printf("workload->processesInfo[i]->advancementTime=%d   <  workload->processesInfo[i]->processDuration=%d  getProcessState(Workload *workload, int index)=%s\n", workload->processesInfo[i]->advancementTime, workload->processesInfo[i]->processDuration, ProcessStateToString(getProcessState(workload, i)));
         //if (workload->processesInfo[i]->advancementTime < workload->processesInfo[i]->processDuration)
         if (getProcessState(workload, i) != TERMINATED)
         {
@@ -621,7 +596,7 @@ static int compareProcessStartTime(const void *a, const void *b)
 //static 
 void advanceNextEvent(Workload *workload, int pid)
 {
-    printf("advance next event----------------------------");
+    printf("advance next event----------------------------\n");
     int index = getProcessIndex(workload, pid);
     ProcessEvent *event = workload->processesInfo[index]->nextEvent;
     ProcessEvent *nextEvent = event->nextEvent;
@@ -644,7 +619,6 @@ static int getNextProcessEventTime(Workload *workload, Scheduler *scheduler)
             time = minTime(time, next_time);
         }
     }
-    //call to getProcessNextEventTime
     return time;
 }
 
@@ -653,7 +627,7 @@ void handleSimulationEvents(Computer *computer, Workload *workload, int time, Pr
 {
     //1. Handle event(s): simulator and the scheduler check if an event is triggered at the current time unit and handle it
     //Ex: if a process arrives in the system, the simulator will call the scheduler to put the process in the ready queue.
-    printf("beginning of handleEvents\n");
+    printf("\nbeginning of handleEvents\n");
     processArrived(computer->scheduler, workload, time, stats);
 
     //Ex: event = scheduling events, such as a process needing to move to an upper queue because of aging
@@ -675,31 +649,28 @@ void handleSimulationEvents(Computer *computer, Workload *workload, int time, Pr
     for (int i = 0; i < computer->cpu->coreCount; i++)
     {
         if (computer->cpu->cores[i]->pcb) {//if there is a process in the core
-            printf("core %d", i);
-            printf("pib = %d\n", computer->cpu->cores[i]->pcb->pid);
-            printf("getProcessCurEventTimeLeft(workload, computer->cpu->cores[i]->pcb->pid) = %d, getProcessCurEventTimeLeft(workload, computer->cpu->cores[i]->pcb->pid) == 0 = %d\n", getProcessCurEventTimeLeft(workload, computer->cpu->cores[i]->pcb->pid), getProcessCurEventTimeLeft(workload, computer->cpu->cores[i]->pcb->pid) == 0);
-            printf("getProcessNextEventTime(workload, computer->cpu->cores[i]->pcb->pid) = %d, getProcessAdvancementTime(workload, computer->cpu->cores[i]->pcb->pid) = %d\n", getProcessNextEventTime(workload, computer->cpu->cores[i]->pcb->pid), getProcessAdvancementTime(workload, computer->cpu->cores[i]->pcb->pid));
+            //printf("getProcessCurEventTimeLeft(workload, computer->cpu->cores[i]->pcb->pid) = %d, getProcessCurEventTimeLeft(workload, computer->cpu->cores[i]->pcb->pid) == 0 = %d\n", getProcessCurEventTimeLeft(workload, computer->cpu->cores[i]->pcb->pid), getProcessCurEventTimeLeft(workload, computer->cpu->cores[i]->pcb->pid) == 0);
+            //printf("getProcessNextEventTime(workload, computer->cpu->cores[i]->pcb->pid) = %d, getProcessAdvancementTime(workload, computer->cpu->cores[i]->pcb->pid) = %d\n", getProcessNextEventTime(workload, computer->cpu->cores[i]->pcb->pid), getProcessAdvancementTime(workload, computer->cpu->cores[i]->pcb->pid));
             int pid = computer->cpu->cores[i]->pcb->pid;
             //printf("computer->cpu->cores[i]->switchInTimer = %d  computer->cpu->cores[i]->switchOutTimer=%d  pid=%d\n", computer->cpu->cores[i]->switchInTimer, computer->cpu->cores[i]->switchOutTimer, pid);
-            if (computer->cpu->cores[i]->switchInTimer == getSwitchInDuration())
+            if (computer->cpu->cores[i]->state == SWITCH_IN && computer->cpu->cores[i]->switchInTimer == 0)
             {
                 printf("pid %d switch-in finished\n", pid);
                 computer->cpu->cores[i]->state = OCCUPIED;
                 setProcessState(workload, pid, RUNNING);
-                computer->cpu->cores[i]->switchInTimer = -1;
             }
-            else if (computer->cpu->cores[i]->switchOutTimer == getSwitchOutDuration()) // => state == switch_out
+            else if (computer->cpu->cores[i]->state == SWITCH_OUT && computer->cpu->cores[i]->switchOutTimer == 0)
             {
-                printf("switch-out finished\n");
+                printf("pid %d switch-out finished\n", pid);
                 computer->cpu->cores[i]->state = IDLE;
-                computer->cpu->cores[i]->switchOutTimer = -1;
+                computer->cpu->cores[i]->pcb = NULL; //release the core
+                //might need to free in case we apss a node from the queue
             }
             //else if (computer->cpu->cores[i]->state == OCCUPIED && getProcessCurEventTimeLeft(workload, computer->cpu->cores[i]->pcb->pid) == 0) //terminated
             else if (computer->cpu->cores[i]->pcb && getProcessCurEventTimeLeft(workload, computer->cpu->cores[i]->pcb->pid) == 0) //terminated
             {
                 //start switch out/terminated
                 printf("process %d terminated or begins switch out\n", pid);
-                int pid = computer->cpu->cores[i]->pcb->pid;
                 bool terminated = (getProcessAdvancementTime(workload, pid) == getProcessDuration(workload, pid));
                 //printf("getProcessAdvancementTime(workload, pid)=%d   getProcessDuration(workload, pid)=%d    terminated=%d", getProcessAdvancementTime(workload, pid), getProcessDuration(workload, pid), getProcessAdvancementTime(workload, pid) == getProcessDuration(workload, pid));
                 if (terminated)
@@ -709,6 +680,8 @@ void handleSimulationEvents(Computer *computer, Workload *workload, int time, Pr
                     setProcessState(workload, pid, TERMINATED);
                     computer->cpu->cores[i]->state = IDLE; //release the core
                     computer->cpu->cores[i]->pcb = NULL; //release the core
+                    //might need to free in case we pass a node from the queue
+
                     //compute the graph and stats for terminated here to avoid repeating it every time step
                     addProcessEventToGraph(graph, pid, time, TERMINATED, NO_CORE);
                     getProcessStats(stats, pid)->finishTime = time;
@@ -717,34 +690,82 @@ void handleSimulationEvents(Computer *computer, Workload *workload, int time, Pr
                 }
                 else {
                     //start switch out/terminated
-                    printf("process %d starts switch-out\n", pid);
-                    if (getSwitchInDuration() > 0)
+                    PCB *pcb = computer->cpu->cores[i]->pcb;
+                    if (SWITCH_OUT_DURATION > 0)
                     {
+                        printf("process %d starts switch-out\n", pid);
                         computer->cpu->cores[i]->state = SWITCH_OUT;
-                        computer->cpu->cores[i]->switchOutTimer = 0; // start timer
-                    } else
+                        computer->cpu->cores[i]->switchOutTimer = SWITCH_OUT_DURATION; // start timer
+                    } else {
+                        printf("process %d no switch-out\n", pid);
                         computer->cpu->cores[i]->state = IDLE;
-
+                        computer->cpu->cores[i]->pcb = NULL; //release the core
+                        //might need to free in case we pass a node from the queue
+                    }
+                    //"An I/O operation can start without having to wait for the process that initiated it to be switched out. Therefore, you must put the process on the wait queue directly (at the same time as the context switch starts)"
+                    //The list of events will alternate between CPU and I/O events => next event is a IO_BURST
+                    addProcessEventToGraph(graph, pid, time, WAITING, NO_CORE);
+                    printf("Next event in an IO: need to add to waiting queue\n");
+                    handleProcessForDisk(computer->scheduler, pcb);
+                    /*
                     //need to deal with next event: * io -> waiting queue
                     //                              * cpu -> readyqueue
                     ProcessEventType type = getProcessNextEventType(workload, pid);
-                    //"An I/O operation can start without having to wait for the process that initiated it to be switched out. Therefore, you must put the process on the wait queue directly (at the same time as the context switch starts)"
                     if (type == CPU_BURST)
                         addProcessEventToGraph(graph, pid, time, READY, NO_CORE);
                     else if (type == IO_BURST) {
                         addProcessEventToGraph(graph, pid, time, WAITING, NO_CORE);
                         printf("Next event in an IO: need to add to waiting queue");
-                    }
+                        handleProcessForDisk(computer->scheduler, pcb);
+                    }*/
 
-                    //need to understand
                     getProcessStats(stats, pid)->nbContextSwitches += 1;
+                }
+            }
+            else if (computer->cpu->cores[i]->state == INTERRUPTED && computer->cpu->cores[i]->interruptTimer == 0)
+            {
+                printf("interrupt finished on core %d: needs to come back to previous state - interrupt for pid %d\n", i, computer->disk->pcb->pid);
+                //the process that was waiting for the IO operation to complete will be put back on the ready queue.
+                computer->disk->pcb->state = READY;
+                handleProcessForCPU(computer->scheduler, computer->disk->pcb);
+
+                //-------debug
+                computer->disk->pcb = NULL;
+                // need to come back to previous state in the CPU core
+                if (computer->cpu->cores[i]->pcb) { //there was a process on the core
+                    if (computer->cpu->cores[i]->switchInTimer != 0)
+                    {
+                        printf("pid %d switch-in continuing\n", pid);
+                        computer->cpu->cores[i]->state = SWITCH_IN;
+                    }
+                    else if (computer->cpu->cores[i]->switchOutTimer != 0)
+                    {
+                        printf("pid %d switch-out continuing\n", pid);
+                        computer->cpu->cores[i]->state = SWITCH_OUT;
+                    }
+                    else
+                    {
+                        printf("pid %d execution continuing\n", pid);
+                        computer->cpu->cores[i]->state = OCCUPIED;
+                        computer->cpu->cores[i]->pcb->state = RUNNING; //"restart" the process execution
+                    }
+                }
+                else {
+                    computer->cpu->cores[i]->state = IDLE;
                 }
             }
         }
     }
     printCPUStates(computer->cpu);
+    printDiskStates(computer->disk);
 
     //Ex: event = hardware events, such as the triggering of an interrupt.
+    if (computer->disk->pcb && getProcessCurEventTimeLeft(workload, computer->disk->pcb->pid) == 0) //terminated -> interrupt
+    {
+        //start interrupt
+        printf("process %d begins interrupt\n", computer->disk->pcb->pid);
+        handleInterrupt(computer);
+    }
 }
 
 void processArrived(Scheduler *scheduler, Workload *workload, int time, AllStats *stats)
@@ -755,14 +776,14 @@ void processArrived(Scheduler *scheduler, Workload *workload, int time, AllStats
         //"The first event will always be a CPU event (at time 0)"
         if (getProcessStartTime(workload, pid) == time) {
             printf("process %d arrived at time %d\n", pid, time);
-            handleProcessForCPUArrived(scheduler, getPCBFromWorkload(workload, i));
+            handleProcessForCPU(scheduler, getPCBFromWorkload(workload, i));
             getProcessStats(stats, pid)->arrivalTime = time;
             setProcessState(workload, pid, READY);
         }
     }
 }
 
-void advanceTime(int time, int next_time, Workload *workload, Computer *computer, ProcessGraph *graph, AllStats *stats) {
+void advanceProcessTime(int time, int next_time, Workload *workload, Computer *computer, ProcessGraph *graph, AllStats *stats) {
     int delta_time = next_time - time;
     for (int i = 0; i < workload->nbProcesses; i++)
     {
@@ -785,12 +806,15 @@ void advanceTime(int time, int next_time, Workload *workload, Computer *computer
                 break;
             case WAITING:
                 addProcessEventToGraph(graph, pid, time, state, NO_CORE);
-                /*
-                need to go through the whole waiting queue:
-                * if on disk: * not during an interrupt: * increase advancement time: setProcessAdvancementTime(workload, pid, getProcessAdvancementTime(workload, pid) + delta_time);
-                                                         * graph: addDiskEventToGraph(graph, pid, time, DISK_RUNNING);
-                              * during an interrupt: graph: addDiskEventToGraph(graph, pid, time, DISK_IDLE);
-                */
+                if (computer->disk->state == DISK_RUNNING_) {
+                    printf("add disk running in graph\n");
+                    setProcessAdvancementTime(workload, pid, getProcessAdvancementTime(workload, pid) + delta_time);
+                    addDiskEventToGraph(graph, pid, time, DISK_RUNNING);
+                }
+                else if (computer->disk->state == DISK_IDLE_) { //debug
+                    printf("add disk idle while interrupt\n");
+                    addDiskEventToGraph(graph, pid, time, DISK_IDLE);
+                }
                break;
             case RUNNING:
                 getProcessStats(stats, pid)->cpuTime += delta_time;
@@ -807,30 +831,10 @@ void advanceTime(int time, int next_time, Workload *workload, Computer *computer
         }
     }
 
-    //update the cpu switch in/out timers
-    for (int i = 0; i < computer->cpu->coreCount; i++)
-    {
-        /*if (computer->cpu->cores[i]->state == OCCUPIED)
-        {
-            int pid = computer->cpu->cores[i]->pcb->pid;
-            getProcessStats(stats, pid)->waitingTime += delta_time;
-            printf("\nselected process: %d in occuped cpu\n", pid);
-
-        }
-        else*/ if (computer->cpu->cores[i]->state == SWITCH_IN)
-        {
-            int pid = computer->cpu->cores[i]->pcb->pid;
-            printf("advance process %d in switch in\n", pid);
-            computer->cpu->cores[i]->switchInTimer += delta_time;
-        }
-        else if (computer->cpu->cores[i]->state == SWITCH_OUT)
-        {
-            int pid = computer->cpu->cores[i]->pcb->pid;
-            printf("advance process %d switch out\n", pid);
-            computer->cpu->cores[i]->switchOutTimer += delta_time;
-        }
+    if (computer->disk->state == DISK_IDLE_) { //debug
+        //Issue on submission platform if not present
+        addDiskEventToGraph(graph, -1, time, DISK_IDLE);
     }
-    //update in the disk
 }
 
 //to deal with time = -1
@@ -862,7 +866,7 @@ const char* ProcessStateToString(ProcessState state) {
 void printProcessStates(const Workload *workload) {
     for (int i = 0; i < workload->nbProcesses; i++)
     {
-        printf("process at index %d, with pid %d, at state %s", i, workload->processesInfo[i]->pcb->pid, ProcessStateToString(workload->processesInfo[i]->pcb->state));
+        printf("process at index %d, with pid %d, at state %s, ", i, workload->processesInfo[i]->pcb->pid, ProcessStateToString(workload->processesInfo[i]->pcb->state));
         printf("processDuration=%d and advancementTime=%d\n", workload->processesInfo[i]->processDuration, workload->processesInfo[i]->advancementTime);
     }
 }

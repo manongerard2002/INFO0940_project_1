@@ -7,8 +7,8 @@
 #include "schedulingAlgorithms.h"
 #include "schedulingLogic.h"
 
-#define SWITCH_OUT_DURATION 2 // Duration of the context switch out
-#define SWITCH_IN_DURATION 1 // Duration of the context switch in
+#define SWITCH_OUT_DURATION 0//2 // Duration of the context switch out
+#define SWITCH_IN_DURATION 0//1 // Duration of the context switch in
 
 typedef struct CPU_t CPU;
 typedef struct Core_t Core;
@@ -30,6 +30,7 @@ typedef enum
 {
     SWITCH_IN,
     SWITCH_OUT,
+    INTERRUPTED,
     OCCUPIED,//RUNNING,
     IDLE
 } coreState;
@@ -45,22 +46,24 @@ struct Core_t
 {
     coreState state;
     PCB *pcb;
-    int switchInTimer; //-1 when not in switch in
-    int switchOutTimer; //-1 when not in switch out
+    int switchInTimer; //0 when not in switch in
+    int switchOutTimer; //0 when not in switch out
+    int interruptTimer; //0 when not during an interrupt
 };
 
 
 /* ------------------------------ Disk struct ------------------------------ */
 
-/*typedef enum
+typedef enum
 {
-    DISK_RUNNING,
-    DISK_IDLE
-} DiskState;*/
+    DISK_RUNNING_,
+    DISK_IDLE_
+} DiskStates; //ask on ecampus if autorized to change inside graph
 
 struct Disk_t
 {
-    DiskState state; //like in graph
+    DiskStates state; //different than in graph: not anymore
+    PCB *pcb;
 };
 
 /* ------------------------- function definitions -------------------------
@@ -107,16 +110,14 @@ Disk *initDisk(void);
  */
 void freeDisk(Disk *disk);
 
-int getSwitchInDuration();
-
-int getSwitchOutDuration();
-
-void interruptHandler();
+void handleInterrupt(Computer *computer);
 
 
 // debug: to remove after
 //debug:
 const char* CPUstateToString(coreState state);
 void printCPUStates(CPU *cpu);
+const char* DiskStateToString(DiskStates state);
+void printDiskStates(Disk *disk);
 
 #endif // computer_h

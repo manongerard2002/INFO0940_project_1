@@ -6,24 +6,30 @@
 
 SchedulingReadyQueue *initSchedulingReadyQueue(int size)
 {
-    SchedulingReadyQueue *SchedulingReadyQueue = malloc(sizeof(SchedulingReadyQueue));
-    if (!SchedulingReadyQueue)
+    SchedulingReadyQueue *readyQueue = (SchedulingReadyQueue *) malloc(sizeof(SchedulingReadyQueue));
+    if (!readyQueue)
     {
         return NULL;
     }
 
-    SchedulingReadyQueue->processesPCB = (PCB **) malloc(size * sizeof(PCB *)); //to change to a structure
-    if (!SchedulingReadyQueue->processesPCB)
+    readyQueue->head = 0;
+    readyQueue->tail = 0;
+    readyQueue->size = size + 1; //need an extra slot to differentiate empty and full
+
+    readyQueue->processesPCB = (PCB **) malloc(readyQueue->size * sizeof(PCB *)); //to change to a structure
+    if (!readyQueue->processesPCB)
     {
-        free(SchedulingReadyQueue);
+        free(readyQueue);
         return NULL;
     }
 
-    SchedulingReadyQueue->head = 0;
-    SchedulingReadyQueue->tail = 0;
-    SchedulingReadyQueue->size = size + 1; //need an extra slot to differentiate empty and full
+    return readyQueue;
+}
 
-    return SchedulingReadyQueue;
+void freeSchedulingReadyQueue(SchedulingReadyQueue *readyQueue)
+{
+    free(readyQueue->processesPCB);
+    free(readyQueue);
 }
 
 bool isEmptySchedulingReadyQueue(SchedulingReadyQueue *SchedulingReadyQueue)
@@ -46,7 +52,9 @@ bool enqueueSchedulingReadyQueueFCFS(SchedulingReadyQueue *SchedulingReadyQueue,
     else
     {
         // SchedulingReadyQueue is not full, insert the element at the tail
+        printf("SchedulingReadyQueue->tail=%d\n", SchedulingReadyQueue->tail);
         SchedulingReadyQueue->processesPCB[SchedulingReadyQueue->tail] = pcb;
+        printf("ok2\n");
         SchedulingReadyQueue->tail = (SchedulingReadyQueue->tail + 1) % SchedulingReadyQueue->size;
     }
     return 0;
@@ -100,13 +108,13 @@ bool processInReadyQueue(SchedulingReadyQueue *SchedulingReadyQueue, int pid) {
 
 void printReadyQueue(SchedulingReadyQueue *SchedulingReadyQueue)
 {
-    printf("printReadyQueue: ");
+    printf("printReadyQueue: size =%d    head=%d   tail=%d\n", SchedulingReadyQueue->size, SchedulingReadyQueue->head, SchedulingReadyQueue->tail);
     int i = SchedulingReadyQueue->head;
     while (i != SchedulingReadyQueue->tail) {
         printf("pid %d - state ", SchedulingReadyQueue->processesPCB[i]->pid);
-        ProcessStateToString(SchedulingReadyQueue->processesPCB[i]->state); //bug ?
+        ProcessStateToString(SchedulingReadyQueue->processesPCB[i]->state); //works ?
         printf("priority %d", SchedulingReadyQueue->processesPCB[i]->priority);
         i = (i + 1) % SchedulingReadyQueue->size;
+        printf("\n");
     }
-    printf("\n");
 }
