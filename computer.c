@@ -29,13 +29,9 @@ Computer *initComputer(Scheduler *scheduler, CPU *cpu, Disk *disk)
 
 void freeComputer(Computer *computer)
 {
-    printf("before freeScheduler\n");
     freeScheduler(computer->scheduler);
-    printf("after freeScheduler\n");
     freeCPU(computer->cpu);
-    printf("after freeCPU\n");
     freeDisk(computer->disk);
-    printf("after freeDisk\n");
     free(computer);
 }
 

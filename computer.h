@@ -7,8 +7,8 @@
 #include "schedulingAlgorithms.h"
 #include "schedulingLogic.h"
 
-#define SWITCH_OUT_DURATION 0//2 // Duration of the context switch out
-#define SWITCH_IN_DURATION 0//1 // Duration of the context switch in
+#define SWITCH_OUT_DURATION 2 // Duration of the context switch out
+#define SWITCH_IN_DURATION 1 // Duration of the context switch in
 
 typedef struct CPU_t CPU;
 typedef struct Core_t Core;

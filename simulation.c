@@ -473,11 +473,6 @@ void launchSimulation(Workload *workload, SchedulingAlgorithm **algorithms, int 
 
     addAllProcessesToStats(stats, workload);
 
-    // You may want to sort processes by start time to facilitate the
-    // simulation. Remove this line and the compareProcessStartTime if you
-    // don't want to.
-    //qsort(workload->processesInfo, workload->nbProcesses, sizeof(ProcessSimulationInfo *), compareProcessStartTime);
-
     int time = 0;
     /* Main loop of the simulation.*/
     while (!workloadOver(workload)) // You probably want to change this condition
@@ -507,9 +502,7 @@ void launchSimulation(Workload *workload, SchedulingAlgorithm **algorithms, int 
         //timers.
         int next_time=time+1; //tmp
         advanceProcessTime(time, next_time, workload, computer, graph, stats);
-        printf("ended advance Process Time\n");
         advanceSchedulingTime(time, next_time, computer);
-        printf("ended advance Scheduling time\n");
 
         printStats(stats);
         printGraph(graph);
@@ -522,13 +515,10 @@ void launchSimulation(Workload *workload, SchedulingAlgorithm **algorithms, int 
             break;
         time = next_time;
         
-        if (time > 50)
+        if (time > 40)
             break; //to suppress once everything done
     }
-    printf("after while\n");
-    //free(processArrivedIndexes);
     freeComputer(computer);
-    printf("after free computer\n");
 }
 
 /* ---------------------------- static functions --------------------------- */
@@ -646,9 +636,11 @@ void handleSimulationEvents(Computer *computer, Workload *workload, int time, Pr
         }
     }*/
     //cpu: switch-in/out
+    printf("-------------------------ok1\n");
     for (int i = 0; i < computer->cpu->coreCount; i++)
     {
-        if (computer->cpu->cores[i]->pcb) {//if there is a process in the core
+        if (computer->cpu->cores[i]->pcb) //if there is a process on the core
+        {
             //printf("getProcessCurEventTimeLeft(workload, computer->cpu->cores[i]->pcb->pid) = %d, getProcessCurEventTimeLeft(workload, computer->cpu->cores[i]->pcb->pid) == 0 = %d\n", getProcessCurEventTimeLeft(workload, computer->cpu->cores[i]->pcb->pid), getProcessCurEventTimeLeft(workload, computer->cpu->cores[i]->pcb->pid) == 0);
             //printf("getProcessNextEventTime(workload, computer->cpu->cores[i]->pcb->pid) = %d, getProcessAdvancementTime(workload, computer->cpu->cores[i]->pcb->pid) = %d\n", getProcessNextEventTime(workload, computer->cpu->cores[i]->pcb->pid), getProcessAdvancementTime(workload, computer->cpu->cores[i]->pcb->pid));
             int pid = computer->cpu->cores[i]->pcb->pid;
@@ -722,40 +714,42 @@ void handleSimulationEvents(Computer *computer, Workload *workload, int time, Pr
                     getProcessStats(stats, pid)->nbContextSwitches += 1;
                 }
             }
-            else if (computer->cpu->cores[i]->state == INTERRUPTED && computer->cpu->cores[i]->interruptTimer == 0)
-            {
-                printf("interrupt finished on core %d: needs to come back to previous state - interrupt for pid %d\n", i, computer->disk->pcb->pid);
-                //the process that was waiting for the IO operation to complete will be put back on the ready queue.
-                computer->disk->pcb->state = READY;
-                handleProcessForCPU(computer->scheduler, computer->disk->pcb);
+        }
+        if (computer->cpu->cores[i]->state == INTERRUPTED && computer->cpu->cores[i]->interruptTimer == 0)
+        {
+            printf("interrupt finished on core %d: needs to come back to previous state - interrupt for pid %d\n", i, computer->disk->pcb->pid);
+            //the process that was waiting for the IO operation to complete will be put back on the ready queue.
+            computer->disk->pcb->state = READY;
+            handleProcessForCPU(computer->scheduler, computer->disk->pcb);
 
-                //-------debug
-                computer->disk->pcb = NULL;
-                // need to come back to previous state in the CPU core
-                if (computer->cpu->cores[i]->pcb) { //there was a process on the core
-                    if (computer->cpu->cores[i]->switchInTimer != 0)
-                    {
-                        printf("pid %d switch-in continuing\n", pid);
-                        computer->cpu->cores[i]->state = SWITCH_IN;
-                    }
-                    else if (computer->cpu->cores[i]->switchOutTimer != 0)
-                    {
-                        printf("pid %d switch-out continuing\n", pid);
-                        computer->cpu->cores[i]->state = SWITCH_OUT;
-                    }
-                    else
-                    {
-                        printf("pid %d execution continuing\n", pid);
-                        computer->cpu->cores[i]->state = OCCUPIED;
-                        computer->cpu->cores[i]->pcb->state = RUNNING; //"restart" the process execution
-                    }
+            //-------debug
+            computer->disk->pcb = NULL;
+            // need to come back to previous state in the CPU core
+            if (computer->cpu->cores[i]->pcb) { //there was a process on the core
+                int pid = computer->cpu->cores[i]->pcb->pid;
+                if (computer->cpu->cores[i]->switchInTimer != 0)
+                {
+                    printf("pid %d switch-in continuing\n", pid);
+                    computer->cpu->cores[i]->state = SWITCH_IN;
                 }
-                else {
-                    computer->cpu->cores[i]->state = IDLE;
+                else if (computer->cpu->cores[i]->switchOutTimer != 0)
+                {
+                    printf("pid %d switch-out continuing\n", pid);
+                    computer->cpu->cores[i]->state = SWITCH_OUT;
                 }
+                else
+                {
+                    printf("pid %d execution continuing\n", pid);
+                    computer->cpu->cores[i]->state = OCCUPIED;
+                    computer->cpu->cores[i]->pcb->state = RUNNING; //"restart" the process execution
+                }
+            }
+            else {
+                computer->cpu->cores[i]->state = IDLE;
             }
         }
     }
+    printf("-------------------------ok2\n");
     printCPUStates(computer->cpu);
     printDiskStates(computer->disk);
 

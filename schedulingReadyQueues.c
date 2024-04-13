@@ -52,9 +52,7 @@ bool enqueueSchedulingReadyQueueFCFS(SchedulingReadyQueue *SchedulingReadyQueue,
     else
     {
         // SchedulingReadyQueue is not full, insert the element at the tail
-        printf("SchedulingReadyQueue->tail=%d\n", SchedulingReadyQueue->tail);
         SchedulingReadyQueue->processesPCB[SchedulingReadyQueue->tail] = pcb;
-        printf("ok2\n");
         SchedulingReadyQueue->tail = (SchedulingReadyQueue->tail + 1) % SchedulingReadyQueue->size;
     }
     return 0;

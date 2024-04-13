@@ -66,19 +66,16 @@ void freeScheduler(Scheduler *scheduler)
 {
     for (int i = 0; i < scheduler->readyQueueCount; i++)
     {
-        freeSchedulingAlgorithm(scheduler->readyQueueAlgorithms[i]); //freeSchedulingAlgorithm
+        freeSchedulingAlgorithm(scheduler->readyQueueAlgorithms[i]);
         freeSchedulingReadyQueue(scheduler->readyQueues[i]);
     }
     for (int i = 0; i < scheduler->waitingQueueCount; i++)
     {
         freeSchedulingReadyQueue(scheduler->waitingQueues[i]);
     }
-    printf("freeScheduler: after for loop\n");
     free(scheduler->readyQueueAlgorithms);
     free(scheduler->readyQueues);
-    printf("freeScheduler: 2\n");
     free(scheduler->waitingQueues);
-    printf("freeScheduler: 3\n");
     free(scheduler);
 }
 
