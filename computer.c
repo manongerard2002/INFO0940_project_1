@@ -64,7 +64,7 @@ CPU *initCPU(int coreCount)
             return NULL;
         }
         cpu->cores[i]->state = IDLE;
-        cpu->cores[i]->pcb = NULL;
+        cpu->cores[i]->processNode = NULL;
         cpu->cores[i]->switchOutTimer = 0;
         cpu->cores[i]->switchInTimer = 0;
         cpu->cores[i]->interruptTimer = 0;
@@ -94,7 +94,7 @@ Disk *initDisk(void)
     }
 
     disk->state = DISK_IDLE;
-    disk->pcb = NULL;
+    disk->processNode = NULL;
 
     return disk;
 }
@@ -107,7 +107,7 @@ void freeDisk(Disk *disk)
 //need args
 void handleInterrupt(Computer *computer)
 {
-    printf("\nInterrupt handler: pid=%d\n", computer->disk->pcb->pid);
+    printf("\nInterrupt handler: pid=%d\n", computer->disk->processNode->pcb->pid);
     int interruptTimer = INTERRUPT_TIME;
     if (interruptTimer > 0)
     {
@@ -116,8 +116,8 @@ void handleInterrupt(Computer *computer)
         printf("core %d interrupted\n", core);
         computer->cpu->cores[core]->state = INTERRUPTED;
         computer->cpu->cores[core]->interruptTimer = interruptTimer; // start timer
-        if (computer->cpu->cores[core]->pcb)
-            computer->cpu->cores[core]->pcb->state = READY; //stays on the core to be able to "restart" when interrupt ended
+        if (computer->cpu->cores[core]->processNode)
+            computer->cpu->cores[core]->processNode->pcb->state = READY; //stays on the core to be able to "restart" when interrupt ended
     } /*else { //no interrupt: -> should deal with it in simulation
         computer->disk->state = DISK_IDLE_;
         //need to deal with next event: * io -> waiting queue
@@ -128,7 +128,7 @@ void handleInterrupt(Computer *computer)
         else if (type == IO_BURST) {
             addProcessEventToGraph(graph, pid, time, WAITING, NO_CORE);
             printf("Next event in an IO: need to add to waiting queue");
-            handleProcessForDisk(computer->scheduler, computer->disk->pcb);
+            handleProcessForDisk(computer->scheduler, computer->disk->processNode);
         <}
     }*/
     return;
@@ -156,8 +156,8 @@ void printCPUStates(CPU *cpu) {
     for (int i = 0; i < cpu->coreCount; i++)
     {
         printf("core %d, at state %s", i, CPUstateToString(cpu->cores[i]->state));
-        if (cpu->cores[i]->pcb)
-            printf(", with pid %d", cpu->cores[i]->pcb->pid);
+        if (cpu->cores[i]->processNode)
+            printf(", with pid %d", cpu->cores[i]->processNode->pcb->pid);
         printf(", s-in = %d, s-out = %d, interrupt=%d\n", cpu->cores[i]->switchInTimer, cpu->cores[i]->switchOutTimer, cpu->cores[i]->interruptTimer);
     }
 }
@@ -174,8 +174,8 @@ const char* DiskStateToString(DiskStates state) {
 }
 void printDiskStates(Disk *disk) {
     printf("disk at state %s", DiskStateToString(disk->state));
-    if (disk->pcb)
-        printf(", with pid %d\n", disk->pcb->pid);
+    if (disk->processNode)
+        printf(", with pid %d\n", disk->processNode->pcb->pid);
     else
         printf(".\n");
 }

@@ -128,4 +128,10 @@ void freeWorkload(Workload *workload);
  */
 void launchSimulation(Workload *workload, SchedulingAlgorithm **algorithms, int algorithmCount, int cpuCoreCount, ProcessGraph *graph, AllStats *stats);
 
+void advanceNextEvent(Workload *workload, int pid);
+
+//Debug:
+const char* ProcessStateToString(ProcessState state);
+void printProcessStates(const Workload *workload);
+
 #endif // simulation_h

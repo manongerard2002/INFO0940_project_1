@@ -45,7 +45,7 @@ struct CPU_t
 struct Core_t
 {
     coreState state;
-    PCB *pcb;
+    Node *processNode;
     int switchInTimer; //0 when not in switch in
     int switchOutTimer; //0 when not in switch out
     int interruptTimer; //0 when not during an interrupt
@@ -63,7 +63,7 @@ typedef enum
 struct Disk_t
 {
     DiskStates state; //different than in graph: not anymore
-    PCB *pcb;
+    Node *processNode;
 };
 
 /* ------------------------- function definitions -------------------------

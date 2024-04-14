@@ -51,5 +51,8 @@ void freeSchedulingAlgorithm(SchedulingAlgorithm *algorithm);
  */
 void setAlgorithmType(SchedulingAlgorithm *algorithm, const char *type);
 
+//debug:
+const char* AlgoTypeToString(SchedulingAlgorithmType type);
+void printQueueAlgo(SchedulingAlgorithm *algorithm);
 
 #endif // schedulingAlgorithms_h

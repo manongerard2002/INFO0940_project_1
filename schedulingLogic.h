@@ -6,7 +6,7 @@
 #include "graph.h"
 #include "stats.h"
 #include "simulation.h"
-#include "schedulingReadyQueues.h"
+#include "queues.h"
 
 // Cannot include computer.h because of circular dependency
 // -> forward declaration of Computer
@@ -29,10 +29,11 @@ int getWaitQueueCount(void);
  *
  * @param readyQueueAlgorithms An array of pointers to SchedulingAlgorithm objects representing the ready queue algorithms.
  * @param readyQueueCount The number of ready queue algorithms in the array.
+ * @param workload The workload: necessary in case of SJF.
  * @return A pointer to the initialized Scheduler object.
  */
 //ajout nbProcesses: need to be deleted if LL implemented as no limitation in size anymore
-Scheduler *initScheduler(SchedulingAlgorithm **readyQueueAlgorithms, int readyQueueCount, int nbProcesses);
+Scheduler *initScheduler(SchedulingAlgorithm **readyQueueAlgorithms, int readyQueueCount, Workload *workload);
 
 
 /**
@@ -46,46 +47,42 @@ void freeScheduler(Scheduler *scheduler);
 /* -------------------------- scheduling functions ------------------------- */
 
 /**
- * Put the process in the queue number queueNbr
-*/
-void putProcessInReadyQueue(Scheduler *scheduler, int queueNbr, PCB *pcb);
+ * Adds a process to the given queue number queueNbr.
+ *
+ * @param scheduler The Scheduler object where the queues are.
+ * @param queueNbr The index of the queue.
+ * @param pcb The process pcb to be added to the queue.
+ */
+void putprocessInQueue(Scheduler *scheduler, int queueNbr, Node *node);
 
 /**
- * Get the first process pid from the given queues, without dequeuining it.
+ * Get the first process node from the given queues, without dequeuining it.
  *
  * @param scheduler The scheduler.
  * 
- * @return The process PCB, or NULL if the SchedulingReadyQueue is empty.
+ * @return The process Node, or NULL if the queue is empty.
  */
-PCB *topReadyQueue(Scheduler *scheduler);
+Node *topReadyQueue(Scheduler *scheduler);
 
-PCB *dequeueReadyQueue(Scheduler *scheduler);
+Node *dequeueReadyQueue(Scheduler *scheduler);
 
 bool processInReadyQueues(Scheduler *scheduler, int pid);
-
-//int allProcessesInReadyQueues(Scheduler *scheduler, int* allProcesses);
 
 //debug
 void printReadyQueues(Scheduler *scheduler);
 
-void handleProcessForCPU(Scheduler *scheduler, PCB *pcb);
+void handleSchedulerEvents(Computer *computer, int time, AllStats *stats);
 
-void handleProcessForDisk(Scheduler *scheduler, PCB *pcb);
+void handleProcessForCPU(Scheduler *scheduler, Node *node);
+
+void handleProcessForDisk(Scheduler *scheduler, Node *node);
 
 void assignProcessesToResources(Computer *computer, Workload *workload);
 
-void putProcessOnCPU(Workload *workload, Computer *computer, int coreIndex, PCB *pcb);
+void putProcessOnCPU(Workload *workload, Computer *computer, int coreIndex, Node *node);
 
-void putProcessOnDisk(Workload *workload, Computer *computer, PCB *pcb);
+void putProcessOnDisk(Workload *workload, Computer *computer, Node *node);
 
 void advanceSchedulingTime(int time, int next_time, Computer *computer);
-
-/**
- * Performs the First-Come, First-Served (FCFS) scheduling algorithm on the given computer.
- *
- * @param computer The computer on which the scheduling algorithm will be performed.
- * @return The total time taken to complete all processes in the computer.
- */
-//int FCFSalgo(Computer *computer);
 
 #endif // schedulingLogic_h
