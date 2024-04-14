@@ -30,10 +30,10 @@ int getWaitQueueCount(void);
  * @param readyQueueAlgorithms An array of pointers to SchedulingAlgorithm objects representing the ready queue algorithms.
  * @param readyQueueCount The number of ready queue algorithms in the array.
  * @param workload The workload: necessary in case of SJF.
+ * @param cpuCoreCount The number of cores of the CPU.
  * @return A pointer to the initialized Scheduler object.
  */
-//ajout nbProcesses: need to be deleted if LL implemented as no limitation in size anymore
-Scheduler *initScheduler(SchedulingAlgorithm **readyQueueAlgorithms, int readyQueueCount, Workload *workload);
+Scheduler *initScheduler(SchedulingAlgorithm **readyQueueAlgorithms, int readyQueueCount, Workload *workload, int cpuCoreCount);
 
 
 /**
@@ -64,9 +64,13 @@ void putprocessInQueue(Scheduler *scheduler, int queueNbr, Node *node);
  */
 Node *topReadyQueue(Scheduler *scheduler);
 
-Node *dequeueReadyQueue(Scheduler *scheduler);
+Node *dequeueTopReadyQueue(Scheduler *scheduler);
+
+void removeReadyQueueNode(Scheduler *scheduler, int queueNbr, Node *node);
 
 bool processInReadyQueues(Scheduler *scheduler, int pid);
+
+bool otherProcessInReadyQueue(Scheduler *scheduler, int queueNbr);
 
 //debug
 void printReadyQueues(Scheduler *scheduler);
@@ -77,12 +81,12 @@ void handleProcessForCPU(Scheduler *scheduler, Node *node);
 
 void handleProcessForDisk(Scheduler *scheduler, Node *node);
 
-void assignProcessesToResources(Computer *computer, Workload *workload);
+void assignProcessesToResources(Computer *computer);
 
-void putProcessOnCPU(Workload *workload, Computer *computer, int coreIndex, Node *node);
+void putProcessOnCPU(Computer *computer, int coreIndex, Node *node);
 
-void putProcessOnDisk(Workload *workload, Computer *computer, Node *node);
+void putProcessOnDisk(Computer *computer, Node *node);
 
-void advanceSchedulingTime(int time, int next_time, Computer *computer);
+void advanceSchedulingTime(int time, int nextTime, Computer *computer);
 
 #endif // schedulingLogic_h

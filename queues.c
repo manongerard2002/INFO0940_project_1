@@ -3,7 +3,6 @@
 #include <string.h>
 
 #include "queues.h"
-#include "simulation.h" //debug
 
 Node *initNode(PCB *pcb)
 {
@@ -16,16 +15,18 @@ Node *initNode(PCB *pcb)
     {
         return NULL;
     }
+    node->queueNbr=0;
     node->pcb = pcb;
-    node->executionTime = -1; //default value
-    node->waitingTime = 0;
+    node->executionTime = -1; //default value: only used for SJF
+    node->currentQueueWaitingTime = 0;
+    node->currentQueueExecutionTime = 0;
     node->prev = NULL;
     node->next = NULL;
 
     return node;
 }
 
-Queue *initQueue()
+Queue *initQueue(void)
 {
     Queue *queue = (Queue *) malloc(sizeof(Queue));
     if (!queue)
@@ -45,10 +46,10 @@ void freeNode(Node *node)
 
 void freeQueue(Queue *queue)
 {
-    Node *node, *node_next;
-    for (node = queue->head; node; node = node_next)
+    Node *node, *nextNode;
+    for (node = queue->head; node; node = nextNode)
     {
-        node_next = node->next;
+        nextNode = node->next;
         freeNode(node);
     }
     free(queue);
@@ -63,7 +64,8 @@ void enqueueNodeFCFS(Queue *queue, Node *node)
 {
     node->next = NULL;
 
-    if (!queue->head) {
+    if (!queue->head)
+    {
         node->prev = NULL;
         queue->head = node;
     }
@@ -78,7 +80,8 @@ void enqueueNodeFCFS(Queue *queue, Node *node)
 
 void enqueueNodePriority(Queue *queue, Node *node)
 {
-    if (!queue->head) {
+    if (!queue->head)
+    {
         node->next = NULL;
         node->prev = NULL;
         queue->head = node;
@@ -114,7 +117,8 @@ void enqueueNodePriority(Queue *queue, Node *node)
 
 void enqueueNodeSJF(Queue *queue, Node *node)
 {
-    if (!queue->head) {
+    if (!queue->head)
+    {
         node->next = NULL;
         node->prev = NULL;
         queue->head = node;
@@ -148,7 +152,7 @@ void enqueueNodeSJF(Queue *queue, Node *node)
     }
 }
 
-Node *dequeueNode(Queue *queue)
+Node *dequeueTopNode(Queue *queue)
 {
     Node *firstNode = queue->head;
     if (firstNode)
@@ -159,8 +163,39 @@ Node *dequeueNode(Queue *queue)
     {
         queue->tail = NULL;
     }
+    else
+    {
+        queue->head->prev = NULL;
+    }
 
     return firstNode;
+}
+
+void removeNode(Queue *queue, Node *node)
+{
+    Node *tmpNode = queue->head;
+    if (queue->head == node)
+    {
+        queue->head = queue->head->next;
+        queue->head->prev = NULL;
+        return;
+    }
+    else if (queue->tail == node)
+    {
+        queue->tail = queue->tail->prev;
+        queue->tail->next = NULL;
+        return;
+    }
+    while (tmpNode)
+    {
+        if (tmpNode == node)
+        {
+            tmpNode->prev->next = tmpNode->next;
+            tmpNode->next->prev = tmpNode;
+            break;
+        }
+        tmpNode = tmpNode->next;
+    }
 }
 
 Node *topNode(Queue *queue)
@@ -168,9 +203,11 @@ Node *topNode(Queue *queue)
     return queue->head;
 }
 
-bool processInQueue(Queue *queue, int pid) {
+bool processInQueue(Queue *queue, int pid)
+{
     Node *node = queue->head;
-    while (node) {
+    while (node)
+    {
         if (node->pcb->pid == pid)
             return true;
         node = node->next;
@@ -178,27 +215,31 @@ bool processInQueue(Queue *queue, int pid) {
     return false;
 }
 
+//debug
 void printNode(Node *node)
 {
     printf("pid %d - state ", node->pcb->pid);
     //ProcessStateToString(node->pcb->state); //works ?
     printf("priority %d ", node->pcb->priority);
     printf("executionTime: %d ", node->executionTime);
-    printf("waitingTime: %d\n", node->waitingTime);
+    printf("currentQueueWaitingTime: %d ", node->currentQueueWaitingTime);
+    printf("currentQueueExecutionTime: %d\n", node->currentQueueExecutionTime);
 }
 
 void printQueue(Queue *queue)
 {
     printf("printReadyQueue: \n");
     Node *node = queue->head;
-    while (node) {
+    while (node)
+    {
         printNode(node);
         node = node->next;
     }
 }
 
 
-/*int main() {
+/*int main()
+{
     Queue *queue = initQueue();
     PCB *pcb1 = (PCB *) malloc(sizeof(PCB));
     pcb1->pid = 1;
@@ -234,7 +275,7 @@ void printQueue(Queue *queue)
     enqueueNodeFCFS(queue, node5);
     printQueue(queue);
     printf("Dequeue queue: ");
-    Node *node7 = dequeueNode(queue);
+    Node *node7 = dequeueTopNode(queue);
     printNode(node7);
     
     printQueue(queue);
@@ -245,7 +286,7 @@ void printQueue(Queue *queue)
     printf("\n");
 
     printf("Dequeue queue\n");
-    Node *node9 = dequeueNode(queue);
+    Node *node9 = dequeueTopNode(queue);
     printf("Enqueue queue: ");
     enqueueNodeFCFS(queue, node9);
     PCB *pcb6 = (PCB *) malloc(sizeof(PCB));
@@ -256,11 +297,11 @@ void printQueue(Queue *queue)
     enqueueNodeFCFS(queue, node6);
     printQueue(queue);
     printf("Dequeue all queue: ");
-    dequeueNode(queue);
-    dequeueNode(queue);
-    dequeueNode(queue);
-    dequeueNode(queue);
-    dequeueNode(queue);
+    dequeueTopNode(queue);
+    dequeueTopNode(queue);
+    dequeueTopNode(queue);
+    dequeueTopNode(queue);
+    dequeueTopNode(queue);
     printQueue(queue);
     printf("\n");
 
@@ -273,7 +314,7 @@ void printQueue(Queue *queue)
     enqueueNodeFCFS(queue, node10);
     printQueue(queue);
     printf("\n");
-    dequeueNode(queue);
+    dequeueTopNode(queue);
     printQueue(queue);
     printf("\n");
 
@@ -291,7 +332,7 @@ void printQueue(Queue *queue)
     enqueueNodePriority(queue, node5);
     printQueue(queue);
     printf("Dequeue queue: ");
-    node7 = dequeueNode(queue);
+    node7 = dequeueTopNode(queue);
     printNode(node7);
     
     printQueue(queue);
@@ -302,24 +343,24 @@ void printQueue(Queue *queue)
     printf("\n");
 
     printf("Dequeue queue\n");
-    node9 = dequeueNode(queue);
+    node9 = dequeueTopNode(queue);
     printf("Enqueue queue: ");
     enqueueNodePriority(queue, node9);
     enqueueNodePriority(queue, node6);
     printQueue(queue);
     printf("Dequeue all queue: ");
-    dequeueNode(queue);
-    dequeueNode(queue);
-    dequeueNode(queue);
-    dequeueNode(queue);
-    dequeueNode(queue);
+    dequeueTopNode(queue);
+    dequeueTopNode(queue);
+    dequeueTopNode(queue);
+    dequeueTopNode(queue);
+    dequeueTopNode(queue);
     printQueue(queue);
     printf("\n");
 
     enqueueNodePriority(queue, node10);
     printQueue(queue);
     printf("\n");
-    dequeueNode(queue);
+    dequeueTopNode(queue);
     printQueue(queue);
     printf("\n");
 
@@ -336,7 +377,7 @@ void printQueue(Queue *queue)
     enqueueNodeSJF(queue, node5);
     printQueue(queue);
     printf("Dequeue queue: ");
-    node7 = dequeueNode(queue);
+    node7 = dequeueTopNode(queue);
     printNode(node7);
     
     printQueue(queue);
@@ -347,24 +388,24 @@ void printQueue(Queue *queue)
     printf("\n");
 
     printf("Dequeue queue\n");
-    node9 = dequeueNode(queue);
+    node9 = dequeueTopNode(queue);
     printf("Enqueue queue: ");
     enqueueNodeSJF(queue, node9);
     enqueueNodeSJF(queue, node6);
     printQueue(queue);
     printf("Dequeue all queue: ");
-    dequeueNode(queue);
-    dequeueNode(queue);
-    dequeueNode(queue);
-    dequeueNode(queue);
-    dequeueNode(queue);
+    dequeueTopNode(queue);
+    dequeueTopNode(queue);
+    dequeueTopNode(queue);
+    dequeueTopNode(queue);
+    dequeueTopNode(queue);
     printQueue(queue);
     printf("\n");
 
     enqueueNodePriority(queue, node10);
     printQueue(queue);
     printf("\n");
-    dequeueNode(queue);
+    dequeueTopNode(queue);
     printQueue(queue);
     printf("\n");
 

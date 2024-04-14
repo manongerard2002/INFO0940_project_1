@@ -49,20 +49,16 @@ struct Core_t
     int switchInTimer; //0 when not in switch in
     int switchOutTimer; //0 when not in switch out
     int interruptTimer; //0 when not during an interrupt
+    int quantumTime;
+    bool continueOnCPU;
 };
 
 
 /* ------------------------------ Disk struct ------------------------------ */
 
-typedef enum
-{
-    DISK_RUNNING_,
-    DISK_IDLE_
-} DiskStates; //ask on ecampus if autorized to change inside graph
-
 struct Disk_t
 {
-    DiskStates state; //different than in graph: not anymore
+    DiskState state; //used the samee state than the graph
     Node *processNode;
 };
 
@@ -117,7 +113,7 @@ void handleInterrupt(Computer *computer);
 //debug:
 const char* CPUstateToString(coreState state);
 void printCPUStates(CPU *cpu);
-const char* DiskStateToString(DiskStates state);
-void printDiskStates(Disk *disk);
+const char* DiskStateToString(DiskState state);
+void printDiskState(Disk *disk);
 
 #endif // computer_h

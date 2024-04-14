@@ -52,8 +52,10 @@ void setAlgorithmType(SchedulingAlgorithm *algorithm, const char *type)
 }
 
 //debug
-const char* AlgoTypeToString(SchedulingAlgorithmType type) {
-    switch (type) {
+const char* AlgoTypeToString(SchedulingAlgorithmType type)
+{
+    switch (type)
+    {
         case RR:
             return "RR";
         case FCFS:
@@ -67,6 +69,7 @@ const char* AlgoTypeToString(SchedulingAlgorithmType type) {
     }
 }
 
-void printQueueAlgo(SchedulingAlgorithm *algorithm) {
+void printQueueAlgo(SchedulingAlgorithm *algorithm)
+{
     printf("printReadyQueueAlgo: type=%s    RRRSliceLimit=%d   executiontTimeLimit=%d    ageLimit=%d\n", AlgoTypeToString(algorithm->type), algorithm->RRSliceLimit, algorithm->executiontTimeLimit, algorithm->ageLimit);
 }

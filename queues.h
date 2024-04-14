@@ -7,9 +7,11 @@
 typedef struct Node_t Node;
 struct Node_t
 {
+    int queueNbr; //for multilevel: to be able to be put back in the correct queue
     PCB *pcb;
     int executionTime; // for SJF
-    int waitingTime;
+    int currentQueueExecutionTime; // for --limit
+    int currentQueueWaitingTime; //for --age
     struct Node_t *prev;
     struct Node_t *next;
 };
@@ -35,7 +37,7 @@ Node *initNode(PCB *pcb);
  * 
  * @return a pointer to the new Queue, or NULL if memory allocation fails.
  */
-Queue *initQueue();
+Queue *initQueue(void);
 
 /**
  * Free the memory allocated for the Node.
@@ -93,7 +95,15 @@ void enqueueNodeSJF(Queue *queue, Node *node);
  * 
  * @return The process node, or NULL if the queue is empty.
  */
-Node *dequeueNode(Queue *queue);
+Node *dequeueTopNode(Queue *queue);
+
+/**
+ * Dequeue a specific Node from the given queue (if present).
+ *
+ * @param queue The queue from which to dequeue the process node.
+ * @param node The process node to dequeue.
+ */
+void removeNode(Queue *queue, Node *node);
 
 /**
  * Get the first process node from the given queue, without dequeuining it.
