@@ -16,6 +16,15 @@ typedef struct Disk_t Disk;
 
 /* ---------------------------- Computer struct ---------------------------- */
 
+/**
+ * @struct Computer_t
+ * @brief Represents a computer.
+ *
+ * This struct is used to define the properties and behavior of a computer.
+ * It can be used to store information such as the computer's model, processor,
+ * memory, and other relevant details.
+ */
+
 struct Computer_t
 {
     Scheduler *scheduler;
@@ -26,6 +35,9 @@ struct Computer_t
 
 /* ------------------------------- CPU struct ------------------------------ */
 
+/**
+ * @brief Enumeration representing the different types of computers.
+ */
 typedef enum
 {
     SWITCH_IN,
@@ -35,6 +47,12 @@ typedef enum
     IDLE
 } coreState;
 
+/* ------------------------------- Cpu struct ------------------------------ */
+/**
+ * @struct CPU_t
+ * Represents the CPU (Central Processing Unit) of a computer.
+ * This struct contains the necessary attributes and methods to manage the CPU.
+ */
 struct CPU_t
 {
     // list of cores
@@ -42,6 +60,13 @@ struct CPU_t
     int coreCount;
 };
 
+/* ------------------------------- Core struct ------------------------------ */
+
+/**
+ * @struct Core_t
+ * Represents a core of a CPU.
+ * This struct contains the necessary attributes and methods to manage a core.
+ */
 struct Core_t
 {
     coreState state;
@@ -106,14 +131,51 @@ Disk *initDisk(void);
  */
 void freeDisk(Disk *disk);
 
+/**
+ * Handles an interrupt for the given computer.
+ *
+ * @param computer The computer object to handle the interrupt for.
+ */
 void handleInterrupt(Computer *computer);
 
 
 // debug: to remove after
 //debug:
+
+
+/**
+ * Converts the given CPU core state to a string representation.
+ *
+ * @param state The CPU core state to convert.
+ * @return A string representation of the CPU core state.
+ */
 const char* CPUstateToString(coreState state);
+
+
+/**
+ * Prints the CPU states.
+ *
+ * This function takes a pointer to a CPU structure and prints the states of the CPU.
+ *
+ * @param cpu A pointer to the CPU structure.
+ */
 void printCPUStates(CPU *cpu);
+
+/**
+ * Converts the given Disk state to a string representation.
+ *
+ * @param state The Disk state to convert.
+ * @return A string representation of the Disk state.
+ */
 const char* DiskStateToString(DiskState state);
+
+/**
+ * Prints the Disk state.
+ *
+ * This function takes a pointer to a Disk structure and prints the state of the Disk.
+ *
+ * @param disk A pointer to the Disk structure.
+ */
 void printDiskState(Disk *disk);
 
 #endif // computer_h

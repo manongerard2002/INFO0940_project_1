@@ -64,27 +64,93 @@ void putprocessInQueue(Scheduler *scheduler, int queueNbr, Node *node);
  */
 Node *topReadyQueue(Scheduler *scheduler);
 
+/**
+ * Dequeues the first process node from the given queues.
+ *
+ * @param scheduler The scheduler.
+ * 
+ * @return The process Node, or NULL if the queue is empty.
+ */
 Node *dequeueTopReadyQueue(Scheduler *scheduler);
 
+/**
+ * Removes a process node from the given queue.
+ *
+ * @param scheduler The scheduler.
+ * @param queueNbr The index of the queue.
+ * @param node The process node to remove.
+ */
 void removeReadyQueueNode(Scheduler *scheduler, int queueNbr, Node *node);
 
+/**
+ * Processes the ready queues.
+ *
+ * @param scheduler The scheduler.
+ * @param pid The pid of the process to process.
+ * 
+ * @return True if the process was found and processed, false otherwise.
+ */
 bool processInReadyQueues(Scheduler *scheduler, int pid);
 
+
 //debug
+/**
+ * Print the ready queues to the console.
+ *
+ * @param scheduler The scheduler.
+ */
 void printReadyQueues(Scheduler *scheduler);
 
+
+/**
+ * Print the ready queues to the console.
+ *
+ * @param scheduler The scheduler.
+ */
 void handleSchedulerEvents(Computer *computer, int time, AllStats *stats);
 
+/**
+ * Handles the process for the CPU.
+ *
+ * @param scheduler The scheduler.
+ * @param node The process node to handle.
+ */
 void handleProcessForCPU(Scheduler *scheduler, Node *node);
 
+/**
+ * Handles the process for the disk.
+ *
+ * @param scheduler The scheduler.
+ * @param node The process node to handle.
+ */
 void handleProcessForDisk(Scheduler *scheduler, Node *node);
 
+/**
+ * Assigns processes to resources.
+ *
+ * @param computer The computer.
+ */
 void assignProcessesToResources(Computer *computer);
 
+/**
+ * Handles the process for the CPU.
+ *
+ * @param computer The computer.
+ */
 void putProcessOnCPU(Computer *computer, int coreIndex, Node *node);
 
+/**
+ * Handles the process for the disk.
+ *
+ * @param computer The computer.
+ */
 void putProcessOnDisk(Computer *computer, Node *node);
 
+/**
+ * Handles the process for the CPU.
+ *
+ * @param computer The computer.
+ */
 void advanceSchedulingTime(int time, int nextTime, Computer *computer);
 
 #endif // schedulingLogic_h

@@ -103,14 +103,48 @@ static void addAllProcessesToStats(AllStats *stats, Workload *workload);
  */
 //static int compareProcessStartTime(const void *a, const void *b);
 
+/**
+ * Retrieves the PCB (Process Control Block) from the given Workload at the specified index.
+ *
+ * @param workload The Workload from which to retrieve the PCB.
+ * @param index The index of the PCB to retrieve.
+ * @return A pointer to the PCB at the specified index, or NULL if the index is out of bounds.
+ */
 static PCB *getPCBFromWorkload(Workload *workload, int index);
 
+/**
+ * Handles the events of the simulation.
+ *
+ * @param computer The computer on which the simulation is running.
+ * @param workload The workload of the simulation.
+ * @param time The current time of the simulation.
+ * @param stats The statistics of the simulation.
+ */
 static void handleSimulationEvents(Computer *computer, Workload *workload, int time, AllStats *stats);
 
 //static int getNextProcessEventTime(Workload *Workload, Scheduler *scheduler);
 
+/**
+ * Handles the events of the simulation.
+ *
+ * @param scheduler The scheduler of the simulation.
+ * @param workload The workload of the simulation.
+ * @param time The current time of the simulation.
+ * @param stats The statistics of the simulation.
+ */
 static void processArrived(Scheduler *scheduler, Workload *workload, int time, AllStats *stats);
 
+
+/**
+ * Advances the time of the processes in the workload and the scheduler.
+ *
+ * @param time The current time of the simulation.
+ * @param nextTime The next time of the simulation.
+ * @param workload The workload of the simulation.
+ * @param computer The computer on which the simulation is running.
+ * @param graph The graph of the simulation.
+ * @param stats The statistics of the simulation.
+ */
 static void advanceProcessTime(int time, int nextTime, Workload *workload, Computer *computer, ProcessGraph *graph, AllStats *stats);
 
 //int minTime(int time, int nextTime);
