@@ -164,7 +164,7 @@ void printCPUStates(CPU *cpu)
 {
     for (int i = 0; i < cpu->coreCount; i++)
     {
-        printf("core %d, at state %s", i, CPUstateToString(cpu->cores[i]->state));
+        printf("core %d, at state %s ", i, CPUstateToString(cpu->cores[i]->state));
         if (cpu->cores[i]->processNode)
             printNode(cpu->cores[i]->processNode);
         printf(", s-in = %d, s-out = %d, interrupt=%d\n", cpu->cores[i]->switchInTimer, cpu->cores[i]->switchOutTimer, cpu->cores[i]->interruptTimer);
@@ -185,7 +185,7 @@ const char* DiskStateToString(DiskState state)
 }
 void printDiskState(Disk *disk)
 {
-    printf("disk at state %s", DiskStateToString(disk->state));
+    printf("disk at state %s ", DiskStateToString(disk->state));
     if (disk->processNode)
         printf(", with pid %d\n", disk->processNode->pcb->pid);
     else

@@ -35,6 +35,7 @@ Queue *initQueue(void)
     }
     queue->head = NULL;
     queue->tail = NULL;
+    queue->size = 0; //usefull for RR
 
     return queue;
 }
@@ -57,7 +58,12 @@ void freeQueue(Queue *queue)
 
 bool isEmptyQueue(Queue *queue)
 {
-    return !queue->head;
+    return queue->size == 0;//!queue->head;
+}
+
+int queueSize(Queue *queue)
+{
+    return queue->size;
 }
 
 void enqueueNodeFCFS(Queue *queue, Node *node)
@@ -76,6 +82,7 @@ void enqueueNodeFCFS(Queue *queue, Node *node)
     }
 
     queue->tail = node;
+    queue->size += 1;
 }
 
 void enqueueNodePriority(Queue *queue, Node *node)
@@ -113,6 +120,7 @@ void enqueueNodePriority(Queue *queue, Node *node)
             tmp->prev = node;
         }
     }
+    queue->size += 1;
 }
 
 void enqueueNodeSJF(Queue *queue, Node *node)
@@ -150,6 +158,7 @@ void enqueueNodeSJF(Queue *queue, Node *node)
             tmp->prev = node;
         }
     }
+    queue->size += 1;
 }
 
 Node *dequeueTopNode(Queue *queue)
@@ -158,6 +167,7 @@ Node *dequeueTopNode(Queue *queue)
     if (firstNode)
     {
         queue->head = firstNode->next;
+        queue->size -= 1;
     }
     if (!queue->head)
     {
@@ -178,12 +188,14 @@ void removeNode(Queue *queue, Node *node)
     {
         queue->head = queue->head->next;
         queue->head->prev = NULL;
+        queue->size -= 1;
         return;
     }
     else if (queue->tail == node)
     {
         queue->tail = queue->tail->prev;
         queue->tail->next = NULL;
+        queue->size -= 1;
         return;
     }
     while (tmpNode)
@@ -192,6 +204,7 @@ void removeNode(Queue *queue, Node *node)
         {
             tmpNode->prev->next = tmpNode->next;
             tmpNode->next->prev = tmpNode;
+            queue->size -= 1;
             break;
         }
         tmpNode = tmpNode->next;
@@ -236,194 +249,3 @@ void printQueue(Queue *queue)
         node = node->next;
     }
 }
-
-
-/*int main()
-{
-    Queue *queue = initQueue();
-    PCB *pcb1 = (PCB *) malloc(sizeof(PCB));
-    pcb1->pid = 1;
-    pcb1->priority = 1;
-    Node *node1 = initNode(pcb1);
-    node1->executionTime=10;
-    PCB *pcb2 = (PCB *) malloc(sizeof(PCB));
-    pcb2->pid = 2;
-    pcb2->priority = 3;
-    Node *node2 = initNode(pcb2);
-    node2->executionTime=15;
-    PCB *pcb3 = (PCB *) malloc(sizeof(PCB));
-    pcb3->pid = 3;
-    pcb3->priority = 2;
-    Node *node3 = initNode(pcb3);
-    node3->executionTime=5;
-    PCB *pcb4 = (PCB *) malloc(sizeof(PCB));
-    pcb4->pid = 4;
-    pcb4->priority = 15;
-    Node *node4 = initNode(pcb4);
-    node4->executionTime=2;
-    PCB *pcb5 = (PCB *) malloc(sizeof(PCB));
-    pcb5->pid = 5;
-    pcb5->priority = 222;
-    Node *node5 = initNode(pcb5);
-    node5->executionTime=7;
-
-    printf("Enqueuing processes with FCFS:\n");
-    enqueueNodeFCFS(queue, node1);
-    enqueueNodeFCFS(queue, node2);
-    enqueueNodeFCFS(queue, node3);
-    enqueueNodeFCFS(queue, node4);
-    enqueueNodeFCFS(queue, node5);
-    printQueue(queue);
-    printf("Dequeue queue: ");
-    Node *node7 = dequeueTopNode(queue);
-    printNode(node7);
-    
-    printQueue(queue);
-    printf("Top queue: ");
-    Node *node8 = topNode(queue);
-    printNode(node8);
-    printQueue(queue);
-    printf("\n");
-
-    printf("Dequeue queue\n");
-    Node *node9 = dequeueTopNode(queue);
-    printf("Enqueue queue: ");
-    enqueueNodeFCFS(queue, node9);
-    PCB *pcb6 = (PCB *) malloc(sizeof(PCB));
-    pcb6->pid = 6;
-    pcb6->priority = 0;
-    Node *node6 = initNode(pcb6);
-    node6->executionTime=50;
-    enqueueNodeFCFS(queue, node6);
-    printQueue(queue);
-    printf("Dequeue all queue: ");
-    dequeueTopNode(queue);
-    dequeueTopNode(queue);
-    dequeueTopNode(queue);
-    dequeueTopNode(queue);
-    dequeueTopNode(queue);
-    printQueue(queue);
-    printf("\n");
-
-    
-    PCB *pcb10 = (PCB *) malloc(sizeof(PCB));
-    pcb10->pid = 7;
-    pcb10->priority = 0;
-    Node *node10 = initNode(pcb10);
-    node10->executionTime=8;
-    enqueueNodeFCFS(queue, node10);
-    printQueue(queue);
-    printf("\n");
-    dequeueTopNode(queue);
-    printQueue(queue);
-    printf("\n");
-
-
-    printf("-------------PRIORITY-------------------\n");
-    printf("Enqueuing processes with Priority:\n");
-    enqueueNodePriority(queue, node1);
-    printQueue(queue);
-    enqueueNodePriority(queue, node2);
-    printQueue(queue);
-    enqueueNodePriority(queue, node3);
-    printQueue(queue);
-    enqueueNodePriority(queue, node4);
-    printQueue(queue);
-    enqueueNodePriority(queue, node5);
-    printQueue(queue);
-    printf("Dequeue queue: ");
-    node7 = dequeueTopNode(queue);
-    printNode(node7);
-    
-    printQueue(queue);
-    printf("Top queue: ");
-    node8 = topNode(queue);
-    printNode(node8);
-    printQueue(queue);
-    printf("\n");
-
-    printf("Dequeue queue\n");
-    node9 = dequeueTopNode(queue);
-    printf("Enqueue queue: ");
-    enqueueNodePriority(queue, node9);
-    enqueueNodePriority(queue, node6);
-    printQueue(queue);
-    printf("Dequeue all queue: ");
-    dequeueTopNode(queue);
-    dequeueTopNode(queue);
-    dequeueTopNode(queue);
-    dequeueTopNode(queue);
-    dequeueTopNode(queue);
-    printQueue(queue);
-    printf("\n");
-
-    enqueueNodePriority(queue, node10);
-    printQueue(queue);
-    printf("\n");
-    dequeueTopNode(queue);
-    printQueue(queue);
-    printf("\n");
-
-    printf("-------------SJF-------------------\n");
-    printf("Enqueuing processes with SJF:\n");
-    enqueueNodeSJF(queue, node1);
-    printQueue(queue);
-    enqueueNodeSJF(queue, node2);
-    printQueue(queue);
-    enqueueNodeSJF(queue, node3);
-    printQueue(queue);
-    enqueueNodeSJF(queue, node4);
-    printQueue(queue);
-    enqueueNodeSJF(queue, node5);
-    printQueue(queue);
-    printf("Dequeue queue: ");
-    node7 = dequeueTopNode(queue);
-    printNode(node7);
-    
-    printQueue(queue);
-    printf("Top queue: ");
-    node8 = topNode(queue);
-    printNode(node8);
-    printQueue(queue);
-    printf("\n");
-
-    printf("Dequeue queue\n");
-    node9 = dequeueTopNode(queue);
-    printf("Enqueue queue: ");
-    enqueueNodeSJF(queue, node9);
-    enqueueNodeSJF(queue, node6);
-    printQueue(queue);
-    printf("Dequeue all queue: ");
-    dequeueTopNode(queue);
-    dequeueTopNode(queue);
-    dequeueTopNode(queue);
-    dequeueTopNode(queue);
-    dequeueTopNode(queue);
-    printQueue(queue);
-    printf("\n");
-
-    enqueueNodePriority(queue, node10);
-    printQueue(queue);
-    printf("\n");
-    dequeueTopNode(queue);
-    printQueue(queue);
-    printf("\n");
-
-    freeNode(node1);
-    freeNode(node2);
-    freeNode(node3);
-    freeNode(node4);
-    freeNode(node5);
-    freeNode(node6);
-    freeNode(node10);
-    free(pcb1);
-    free(pcb2);
-    free(pcb3);
-    free(pcb4);
-    free(pcb5);
-    free(pcb6);
-    free(pcb10);
-    freeQueue(queue);
-
-    return 0;
-}*/

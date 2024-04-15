@@ -21,6 +21,7 @@ struct Queue_t
 {
     Node *head;
     Node *tail;
+    int size;
 };
 
 /**
@@ -63,6 +64,15 @@ void freeQueue(Queue *queue);
  * @return True if the queue is empty, false otherwise.
  */
 bool isEmptyQueue(Queue *queue);
+
+/**
+ * Gets thee size of the queue.
+ *
+ * @param queue The queue.
+ * 
+ * @return the size of the queue.
+ */
+int queueSize(Queue *queue);
 
 /**
  * Adds a process node to the given queue at the back.
