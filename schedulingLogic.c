@@ -34,6 +34,8 @@ static void advanceWaitingTime(Scheduler *scheduler, int deltaTime);
 
 static bool otherProcessInReadyQueue(Scheduler *scheduler, int queueNbr);
 
+static bool higherPriorityProcessInReadyQueues(Scheduler *scheduler, int queueNbr, Node *node);
+
 static bool higherPriorityProcessInReadyQueue(Scheduler *scheduler, int queueNbr, Node *node);
 
 /* -------------------------- getters and setters -------------------------- */
@@ -171,8 +173,11 @@ bool processInReadyQueues(Scheduler *scheduler, int pid)
 
 static bool otherProcessInReadyQueue(Scheduler *scheduler, int queueNbr)
 {
+    printf("otherprocessinrq: queueNbr=%d\n", queueNbr);
+    printReadyQueues(scheduler);
     for (int i=0; i <= queueNbr; i++)
     {
+        printf("ok1\n");
         if (!isEmptyQueue(scheduler->readyQueues[i]))
             return true;
     }
@@ -180,31 +185,35 @@ static bool otherProcessInReadyQueue(Scheduler *scheduler, int queueNbr)
     return false;
 }
 
-/*A higher priority process can either be a process from a higher priority queue
-or a process from the same queue that has a higher priority with respect to the scheduling algorithm of this queue.*/
 static bool higherPriorityProcessInReadyQueue(Scheduler *scheduler, int queueNbr, Node *node)
 {
-    if (otherProcessInReadyQueue(scheduler, queueNbr-1)) //process from a higher priority queue
-        return true;
+    printf("higherPriorityProcessInReadyQueue:\n");
+    //process from the same queue that has a higher priority with respect to the scheduling algorithm of this queue
     switch (scheduler->readyQueueAlgorithms[queueNbr]->type)
     {
         case FCFS:
         case RR:
-            //need to look back at this
-            //if (!isEmptyQueue(scheduler->readyQueues[queueNbr]))
-            //    return true;
             break;
         case SJF:
             if (topNode(scheduler->readyQueues[queueNbr])->executionTime <= node->executionTime)
                 return true;
             break;
         case PRIORITY:
-            if (topNode(scheduler->readyQueues[queueNbr])->pcb->priority <= node->pcb->priority)
+            printf("ok1\n");
+            Node *head = topNode(scheduler->readyQueues[queueNbr]);
+            if (head && head->pcb->priority <= node->pcb->priority)
                 return true;
             break;
     }
     printf("------------higherPriorityProcessInReadyQueue:false--------------------------------\n");
     return false;
+}
+
+/*A higher priority process can either be a process from a higher priority queue
+or a process from the same queue that has a higher priority with respect to the scheduling algorithm of this queue.*/
+static bool higherPriorityProcessInReadyQueues(Scheduler *scheduler, int queueNbr, Node *node)
+{
+    return otherProcessInReadyQueue(scheduler, queueNbr-1) || higherPriorityProcessInReadyQueue(scheduler, queueNbr, node);
 }
 
 //debug:
@@ -309,7 +318,7 @@ void handleSchedulerEvents(Computer *computer, int time, AllStats *stats)
                 printf("computer->scheduler->readyQueueAlgorithms[queueNbr]->executiontTimeLimit=%d\n", computer->scheduler->readyQueueAlgorithms[queueNbr]->executiontTimeLimit);
                 if (computer->scheduler->readyQueueAlgorithms[queueNbr]->executiontTimeLimit != NO_LIMIT)
                 {
-                    printf("need to check for --limit?: %d\n", computer->cpu->cores[i]->processNode->currentQueueExecutionTime >= computer->scheduler->readyQueueAlgorithms[queueNbr]->executiontTimeLimit);
+                    printf("need to check for --limit?: computer->cpu->cores[i]->processNode->currentQueueExecutionTime %d >= computer->scheduler->readyQueueAlgorithms[queueNbr]->executiontTimeLimit %d =%d\n", computer->cpu->cores[i]->processNode->currentQueueExecutionTime, computer->scheduler->readyQueueAlgorithms[queueNbr]->executiontTimeLimit, computer->cpu->cores[i]->processNode->currentQueueExecutionTime >= computer->scheduler->readyQueueAlgorithms[queueNbr]->executiontTimeLimit);
                     //>= ? je crois que = suffit: a tester
                     if (computer->cpu->cores[i]->processNode->currentQueueExecutionTime >= computer->scheduler->readyQueueAlgorithms[queueNbr]->executiontTimeLimit)
                     {
@@ -319,6 +328,28 @@ void handleSchedulerEvents(Computer *computer, int time, AllStats *stats)
                         computer->cpu->cores[i]->processNode->currentQueueExecutionTime = 0;
                         computer->cpu->cores[i]->processNode->currentQueueWaitingTime = 0;
                         computer->cpu->cores[i]->processNode->queueNbr = queueNbr+1;
+                        
+                        //need to make a fct to avoid copy paste
+                        if (otherProcessInReadyQueue(computer->scheduler, computer->cpu->cores[i]->processNode->queueNbr))
+                        {
+                            printf("process %d begins switch out due to end of time slice\n", pid);
+                            //start switch out
+                            Node *processNode = computer->cpu->cores[i]->processNode;
+                            if (SWITCH_OUT_DURATION > 0)
+                            {
+                                printf("process %d starts switch-out\n", pid);
+                                computer->cpu->cores[i]->state = SWITCH_OUT;
+                                computer->cpu->cores[i]->switchOutTimer = SWITCH_OUT_DURATION; // start timer
+                                computer->cpu->cores[i]->continueOnCPU = true; //flag to indicate that once the switch-out finished it must go back on the CPU
+                            } else {
+                                printf("process %d no switch-out\n", pid);
+                                computer->cpu->cores[i]->state = IDLE;
+                                computer->cpu->cores[i]->processNode = NULL; //release the core
+                                printf("Process put back in readyqueue\n");
+                                handleProcessForCPU(computer->scheduler, processNode);
+                            }
+                            processNode->pcb->state = READY;
+                        }
                     }
                 }
 
@@ -328,7 +359,7 @@ void handleSchedulerEvents(Computer *computer, int time, AllStats *stats)
                 or when the running process has used up its time slice (in the context of the Round-Robin algorithm).
                 A higher priority process can either be a process from a higher priority queue
                 or a process from the same queue that has a higher priority with respect to the scheduling algorithm of this queue.*/
-                if (higherPriorityProcessInReadyQueue(computer->scheduler, computer->cpu->cores[i]->processNode->queueNbr, computer->cpu->cores[i]->processNode))
+                if (computer->cpu->cores[i]->processNode && higherPriorityProcessInReadyQueues(computer->scheduler, computer->cpu->cores[i]->processNode->queueNbr, computer->cpu->cores[i]->processNode))
                 {
                     printf("process %d begins switch out due to higher priority process\n", pid);
                     //start switch out
@@ -348,7 +379,7 @@ void handleSchedulerEvents(Computer *computer, int time, AllStats *stats)
                     }
                     processNode->pcb->state = READY;
                 }
-                else if (computer->scheduler->readyQueueAlgorithms[queueNbr]->type == RR
+                else if (computer->cpu->cores[i]->processNode && computer->scheduler->readyQueueAlgorithms[queueNbr]->type == RR
                 && computer->scheduler->readyQueueAlgorithms[queueNbr]->RRSliceLimit == computer->cpu->cores[i]->quantumTime)
                 {
                     printf("----------RR------------\n");

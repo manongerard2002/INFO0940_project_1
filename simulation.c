@@ -479,7 +479,7 @@ void launchSimulation(Workload *workload, SchedulingAlgorithm **algorithms, int 
             break;
         time = nextTime;
         
-        if (time > 73)
+        if (time > 100)
             break; //to suppress once everything done
     }
     freeComputer(computer);
