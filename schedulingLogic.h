@@ -70,8 +70,6 @@ void removeReadyQueueNode(Scheduler *scheduler, int queueNbr, Node *node);
 
 bool processInReadyQueues(Scheduler *scheduler, int pid);
 
-bool otherProcessInReadyQueue(Scheduler *scheduler, int queueNbr);
-
 //debug
 void printReadyQueues(Scheduler *scheduler);
 

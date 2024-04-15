@@ -32,6 +32,10 @@ struct Scheduler_t
 
 static void advanceWaitingTime(Scheduler *scheduler, int deltaTime);
 
+static bool otherProcessInReadyQueue(Scheduler *scheduler, int queueNbr);
+
+static bool higherPriorityProcessInReadyQueue(Scheduler *scheduler, int queueNbr, Node *node);
+
 /* -------------------------- getters and setters -------------------------- */
 
 int getWaitQueueCount(void)
@@ -165,14 +169,41 @@ bool processInReadyQueues(Scheduler *scheduler, int pid)
     return 0;
 }
 
-bool otherProcessInReadyQueue(Scheduler *scheduler, int queueNbr)
+static bool otherProcessInReadyQueue(Scheduler *scheduler, int queueNbr)
 {
     for (int i=0; i <= queueNbr; i++)
     {
         if (!isEmptyQueue(scheduler->readyQueues[i]))
             return true;
     }
-    printf("---------------------------false--------------------------------\n");
+    printf("-----------otherProcessInReadyQueue:false--------------------------------\n");
+    return false;
+}
+
+/*A higher priority process can either be a process from a higher priority queue
+or a process from the same queue that has a higher priority with respect to the scheduling algorithm of this queue.*/
+static bool higherPriorityProcessInReadyQueue(Scheduler *scheduler, int queueNbr, Node *node)
+{
+    if (otherProcessInReadyQueue(scheduler, queueNbr-1)) //process from a higher priority queue
+        return true;
+    switch (scheduler->readyQueueAlgorithms[queueNbr]->type)
+    {
+        case FCFS:
+        case RR:
+            //need to look back at this
+            //if (!isEmptyQueue(scheduler->readyQueues[queueNbr]))
+            //    return true;
+            break;
+        case SJF:
+            if (topNode(scheduler->readyQueues[queueNbr])->executionTime <= node->executionTime)
+                return true;
+            break;
+        case PRIORITY:
+            if (topNode(scheduler->readyQueues[queueNbr])->pcb->priority <= node->pcb->priority)
+                return true;
+            break;
+    }
+    printf("------------higherPriorityProcessInReadyQueue:false--------------------------------\n");
     return false;
 }
 
@@ -291,8 +322,33 @@ void handleSchedulerEvents(Computer *computer, int time, AllStats *stats)
                     }
                 }
 
-
-                if (computer->scheduler->readyQueueAlgorithms[queueNbr]->type == RR
+                //multilevel :
+                printf("--------------------need to do this for multi core--------------\n");
+                /*Supposing there is only one core, a running process should be preempted whenever a higher priority process is ready to run,
+                or when the running process has used up its time slice (in the context of the Round-Robin algorithm).
+                A higher priority process can either be a process from a higher priority queue
+                or a process from the same queue that has a higher priority with respect to the scheduling algorithm of this queue.*/
+                if (higherPriorityProcessInReadyQueue(computer->scheduler, computer->cpu->cores[i]->processNode->queueNbr, computer->cpu->cores[i]->processNode))
+                {
+                    printf("process %d begins switch out due to higher priority process\n", pid);
+                    //start switch out
+                    Node *processNode = computer->cpu->cores[i]->processNode;
+                    if (SWITCH_OUT_DURATION > 0)
+                    {
+                        printf("process %d starts switch-out\n", pid);
+                        computer->cpu->cores[i]->state = SWITCH_OUT;
+                        computer->cpu->cores[i]->switchOutTimer = SWITCH_OUT_DURATION; // start timer
+                        computer->cpu->cores[i]->continueOnCPU = true; //flag to indicate that once the switch-out finished it must go back on the CPU
+                    } else {
+                        printf("process %d no switch-out\n", pid);
+                        computer->cpu->cores[i]->state = IDLE;
+                        computer->cpu->cores[i]->processNode = NULL; //release the core
+                        printf("Process put back in readyqueue\n");
+                        handleProcessForCPU(computer->scheduler, processNode);
+                    }
+                    processNode->pcb->state = READY;
+                }
+                else if (computer->scheduler->readyQueueAlgorithms[queueNbr]->type == RR
                 && computer->scheduler->readyQueueAlgorithms[queueNbr]->RRSliceLimit == computer->cpu->cores[i]->quantumTime)
                 {
                     printf("----------RR------------\n");
