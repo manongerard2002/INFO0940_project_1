@@ -81,6 +81,7 @@ void freeCPU(CPU *cpu)
 {
     for (int i = 0; i < cpu->coreCount; i++)
     {
+        freeNode(cpu->cores[i]->processNode);
         free(cpu->cores[i]);
     }
     free(cpu->cores);
@@ -103,6 +104,7 @@ Disk *initDisk(void)
 
 void freeDisk(Disk *disk)
 {
+    freeNode(disk->processNode);
     free(disk);
 }
 

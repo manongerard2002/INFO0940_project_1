@@ -481,8 +481,6 @@ void launchSimulation(Workload *workload, SchedulingAlgorithm **algorithms, int 
         // TODO
         //1. Handle event(s): simulator and the scheduler check if an event is triggered at the current time unit and handle it
         handleSimulationEvents(computer, workload, time, stats);
-        printCPUStates(computer->cpu);
-        printDiskState(computer->disk);
 
         //2. Assign processes to resources: This is the step where the main scheduling decisions are made:
         //choosing what processes to execute next.
@@ -514,8 +512,8 @@ void launchSimulation(Workload *workload, SchedulingAlgorithm **algorithms, int 
         time = nextTime;
         
         //Maximum iteration to avoid infinite loop for preemptiveness
-        if (time > 10)
-            break; 
+        if (time > 6)
+            break;
     }
     freeComputer(computer);
 }
@@ -650,13 +648,11 @@ void advanceProcessTime(int time, int nextTime, Workload *workload, Computer *co
     int deltaTime = nextTime - time;
     for (int i = 0; i < workload->nbProcesses; i++)
     {
-    printf("ok1\n");
         ProcessState state = workload->processesInfo[i]->pcb->state;
         int pid = getPIDFromWorkload(workload, i);
         switch (state)
         {
             case READY:
-    printf("ok2\n");
                 //Process ready by default => need to differenciate
                 // * READY: process not started: no graph
                 // * READY: process in readyQueue: update graph/stats
@@ -670,9 +666,7 @@ void advanceProcessTime(int time, int nextTime, Workload *workload, Computer *co
                 }
                 break;
             case WAITING:
-    printf("ok3\n");
                 addProcessEventToGraph(graph, pid, time, state, NO_CORE);
-                printf("ok3.1\n");
                 printDiskState(computer->disk);
                 if (computer->disk->state == DISK_RUNNING && computer->disk->processNode->pcb->pid == pid)
                 {
@@ -691,7 +685,6 @@ void advanceProcessTime(int time, int nextTime, Workload *workload, Computer *co
                 }
                break;
             case RUNNING:
-    printf("ok4\n");
                 getProcessStats(stats, pid)->cpuTime += deltaTime;
                 int core;
                 for (core = 0; core < computer->cpu->coreCount; core++)
@@ -701,20 +694,17 @@ void advanceProcessTime(int time, int nextTime, Workload *workload, Computer *co
                 setProcessAdvancementTime(workload, pid, getProcessAdvancementTime(workload, pid) + deltaTime);
                 break;
             case TERMINATED:
-    printf("ok5\n");
                 addProcessEventToGraph(graph, pid, time, state, NO_CORE);
             default:
                 break;
         }
     }
-    printf("ok6\n");
 
     if (computer->disk->state == DISK_IDLE)
     {
         //Issue on submission platform if not present
         addDiskEventToGraph(graph, -1, time, DISK_IDLE);
     }
-    printf("ok7\n");
 }
 
 //to deal with time = -1
