@@ -479,7 +479,7 @@ void launchSimulation(Workload *workload, SchedulingAlgorithm **algorithms, int 
             break;
         time = nextTime;
         
-        if (time > 40)
+        if (time > 100)
             break; //to suppress once everything done
     }
     freeComputer(computer);
@@ -549,7 +549,6 @@ static void addAllProcessesToStats(AllStats *stats, Workload *workload)
 
 void advanceNextEvent(Workload *workload, int pid)
 {
-    printf("advance next event----------------------------\n");
     int index = getProcessIndex(workload, pid);
     ProcessEvent *event = workload->processesInfo[index]->nextEvent;
     ProcessEvent *nextEvent = event->nextEvent;

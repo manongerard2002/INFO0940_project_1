@@ -71,5 +71,5 @@ const char* AlgoTypeToString(SchedulingAlgorithmType type)
 
 void printQueueAlgo(SchedulingAlgorithm *algorithm)
 {
-    printf("printReadyQueueAlgo: type=%s    RRRSliceLimit=%d   executiontTimeLimit=%d    ageLimit=%d\n", AlgoTypeToString(algorithm->type), algorithm->RRSliceLimit, algorithm->executiontTimeLimit, algorithm->ageLimit);
+    printf("type=%s    RRRSliceLimit=%d   executiontTimeLimit=%d    ageLimit=%d\n", AlgoTypeToString(algorithm->type), algorithm->RRSliceLimit, algorithm->executiontTimeLimit, algorithm->ageLimit);
 }

@@ -166,8 +166,14 @@ bool processInReadyQueues(Scheduler *scheduler, int pid)
 }
 
 bool otherProcessInReadyQueue(Scheduler *scheduler, int queueNbr)
-{//need to check this queue or also the previous ones ?? still need understanding :(((
-    return !isEmptyQueue(scheduler->readyQueues[queueNbr]);
+{
+    for (int i=0; i <= queueNbr; i++)
+    {
+        if (!isEmptyQueue(scheduler->readyQueues[i]))
+            return true;
+    }
+    printf("---------------------------false--------------------------------\n");
+    return false;
 }
 
 //debug:
@@ -175,6 +181,7 @@ void printReadyQueues(Scheduler *scheduler)
 {
     for (int i=0; i < scheduler->readyQueueCount; i++)
     {
+        printf("Queue n°%d: ", i);
         printQueueAlgo(scheduler->readyQueueAlgorithms[i]);
         printQueue(scheduler->readyQueues[i]);
     }
@@ -260,36 +267,61 @@ void handleSchedulerEvents(Computer *computer, int time, AllStats *stats)
                     getProcessStats(stats, pid)->nbContextSwitches += 1;
                 }
             }
-            else if (computer->cpu->cores[i]->state == OCCUPIED
-                && computer->scheduler->readyQueueAlgorithms[computer->cpu->cores[i]->processNode->queueNbr]->type == RR
-                && computer->scheduler->readyQueueAlgorithms[computer->cpu->cores[i]->processNode->queueNbr]->RRSliceLimit == computer->cpu->cores[i]->quantumTime)
+            
+
+            ///---------------------------------
+            if (computer->cpu->cores[i]->state == OCCUPIED)
             {
-                printf("----------RR------------\n");
-                if (otherProcessInReadyQueue(computer->scheduler, computer->cpu->cores[i]->processNode->queueNbr))
+                //For a process to move to the next queue, it must have been executing in the current queue for a certain amount of time (the --limit argument).
+                int queueNbr = computer->cpu->cores[i]->processNode->queueNbr;
+                printf("queueNbr=%d    computer->cpu->cores[i]->processNode->currentQueueExecutionTime=%d\n", queueNbr, computer->cpu->cores[i]->processNode->currentQueueExecutionTime);
+                printf("computer->scheduler->readyQueueAlgorithms[queueNbr]->executiontTimeLimit=%d\n", computer->scheduler->readyQueueAlgorithms[queueNbr]->executiontTimeLimit);
+                if (computer->scheduler->readyQueueAlgorithms[queueNbr]->executiontTimeLimit != NO_LIMIT)
                 {
-                    printf("process %d begins switch out due to end of time slice\n", pid);
-                    //start switch out
-                    Node *processNode = computer->cpu->cores[i]->processNode;
-                    if (SWITCH_OUT_DURATION > 0)
+                    printf("need to check for --limit?: %d\n", computer->cpu->cores[i]->processNode->currentQueueExecutionTime >= computer->scheduler->readyQueueAlgorithms[queueNbr]->executiontTimeLimit);
+                    //>= ? je crois que = suffit: a tester
+                    if (computer->cpu->cores[i]->processNode->currentQueueExecutionTime >= computer->scheduler->readyQueueAlgorithms[queueNbr]->executiontTimeLimit)
                     {
-                        printf("process %d starts switch-out\n", pid);
-                        computer->cpu->cores[i]->state = SWITCH_OUT;
-                        computer->cpu->cores[i]->switchOutTimer = SWITCH_OUT_DURATION; // start timer
-                        computer->cpu->cores[i]->continueOnCPU = true; //flag to indicate that once the switch-out finished it must go back on the CPU
-                    } else {
-                        printf("process %d no switch-out\n", pid);
-                        computer->cpu->cores[i]->state = IDLE;
-                        computer->cpu->cores[i]->processNode = NULL; //release the core
-                        printf("Process put back in readyqueue\n");
-                        handleProcessForCPU(computer->scheduler, processNode);
+                        printf("----------------moving process %d to next queue due to --limit: executiontTimeLimit%d == computer->cpu->cores[i]->processNode->currentQueueExecutionTime %d\n", computer->cpu->cores[i]->processNode->pcb->pid, computer->scheduler->readyQueueAlgorithms[queueNbr]->executiontTimeLimit, computer->cpu->cores[i]->processNode->currentQueueExecutionTime);
+                        //change queue
+                        //what to do when it is not the end of the slice
+                        computer->cpu->cores[i]->processNode->currentQueueExecutionTime = 0;
+                        computer->cpu->cores[i]->processNode->currentQueueWaitingTime = 0;
+                        computer->cpu->cores[i]->processNode->queueNbr = queueNbr+1;
                     }
-                    processNode->pcb->state = READY;
                 }
-                else
+
+
+                if (computer->scheduler->readyQueueAlgorithms[queueNbr]->type == RR
+                && computer->scheduler->readyQueueAlgorithms[queueNbr]->RRSliceLimit == computer->cpu->cores[i]->quantumTime)
                 {
-                    /*Concerning the RR algorithm, if a process has finished its time slice but no other process is ready
-                    to be executed, the process will start a new time slice without passing through the ready queue.*/
-                    computer->cpu->cores[i]->quantumTime = 0;
+                    printf("----------RR------------\n");
+                    if (otherProcessInReadyQueue(computer->scheduler, computer->cpu->cores[i]->processNode->queueNbr))
+                    {
+                        printf("process %d begins switch out due to end of time slice\n", pid);
+                        //start switch out
+                        Node *processNode = computer->cpu->cores[i]->processNode;
+                        if (SWITCH_OUT_DURATION > 0)
+                        {
+                            printf("process %d starts switch-out\n", pid);
+                            computer->cpu->cores[i]->state = SWITCH_OUT;
+                            computer->cpu->cores[i]->switchOutTimer = SWITCH_OUT_DURATION; // start timer
+                            computer->cpu->cores[i]->continueOnCPU = true; //flag to indicate that once the switch-out finished it must go back on the CPU
+                        } else {
+                            printf("process %d no switch-out\n", pid);
+                            computer->cpu->cores[i]->state = IDLE;
+                            computer->cpu->cores[i]->processNode = NULL; //release the core
+                            printf("Process put back in readyqueue\n");
+                            handleProcessForCPU(computer->scheduler, processNode);
+                        }
+                        processNode->pcb->state = READY;
+                    }
+                    else
+                    {
+                        /*Concerning the RR algorithm, if a process has finished its time slice but no other process is ready
+                        to be executed, the process will start a new time slice without passing through the ready queue.*/
+                        computer->cpu->cores[i]->quantumTime = 0;
+                    }
                 }
             }
         }
@@ -334,7 +366,7 @@ void handleSchedulerEvents(Computer *computer, int time, AllStats *stats)
     {
         printf("processInReadyQueues\n");
         //For a process to move to the next queue, it must have been executing in the current queue for a certain amount of time (the --limit argument).
-        if (computer->scheduler->readyQueueAlgorithms[i]->executiontTimeLimit != NO_LIMIT)
+        /*if (computer->scheduler->readyQueueAlgorithms[i]->executiontTimeLimit != NO_LIMIT)
         {
             printf("need to check for --limit\n");
             Node *node = computer->scheduler->readyQueues[i]->head;
@@ -343,12 +375,15 @@ void handleSchedulerEvents(Computer *computer, int time, AllStats *stats)
                 //>= ? je crois que = suffit: a tester
                 if (node->currentQueueExecutionTime >= computer->scheduler->readyQueueAlgorithms[i]->executiontTimeLimit)
                 {
+                    printf("----------------moving process %d to next queue due to --limit: executiontTimeLimit%d == node->currentQueueExecutionTime %d\n", node->pcb->pid, computer->scheduler->readyQueueAlgorithms[i]->executiontTimeLimit, node->currentQueueExecutionTime);
                     removeReadyQueueNode(computer->scheduler, i, node);
+                    node->currentQueueExecutionTime = 0;
+                    node->currentQueueWaitingTime = 0;
                     putprocessInQueue(computer->scheduler, i+1, node);
                 }
                 node = node->next;
             }
-        }
+        }*/
         //To avoid starvation, a process that has been waiting for a certain amount of time in the current queue will be moved to the previous queue (the --age argument).
         if (computer->scheduler->readyQueueAlgorithms[i]->ageLimit != NO_LIMIT)
         {
@@ -359,7 +394,10 @@ void handleSchedulerEvents(Computer *computer, int time, AllStats *stats)
                 //>= ? je crois que = suffit: a tester
                 if (node->currentQueueWaitingTime >= computer->scheduler->readyQueueAlgorithms[i]->ageLimit)
                 {
+                    printf("------------------moving process %d to next queue due to --age: ageTimeLimit%d == node->currentQueueWaitingTime %d\n", node->pcb->pid, computer->scheduler->readyQueueAlgorithms[i]->ageLimit, node->currentQueueWaitingTime);
                     removeReadyQueueNode(computer->scheduler, i, node);
+                    node->currentQueueExecutionTime = 0;
+                    node->currentQueueWaitingTime = 0;
                     putprocessInQueue(computer->scheduler, i-1, node);
                 }
                 node = node->next;
@@ -476,6 +514,7 @@ void advanceSchedulingTime(int time, int nextTime, Computer *computer)
     advanceWaitingTime(computer->scheduler, deltaTime);
     for (int i = 0; i < computer->cpu->coreCount; i++)
     {
+        //---------------------------------
         if (computer->cpu->cores[i]->state == OCCUPIED)
         {
             computer->cpu->cores[i]->processNode->currentQueueExecutionTime += deltaTime;

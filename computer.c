@@ -114,7 +114,7 @@ void handleInterrupt(Computer *computer)
     if (interruptTimer > 0)
     {
         computer->disk->state = DISK_IDLE;
-        int core = rand() % (computer->cpu->coreCount); //should choose randomly one core for fairness
+        int core = rand() % (computer->cpu->coreCount); //should choose randomly one core for fairness ("no notion of core affinity")
         printf("core %d interrupted\n", core);
         computer->cpu->cores[core]->state = INTERRUPTED;
         computer->cpu->cores[core]->interruptTimer = interruptTimer; // start timer
@@ -166,7 +166,7 @@ void printCPUStates(CPU *cpu)
     {
         printf("core %d, at state %s", i, CPUstateToString(cpu->cores[i]->state));
         if (cpu->cores[i]->processNode)
-            printf(", with pid %d", cpu->cores[i]->processNode->pcb->pid);
+            printNode(cpu->cores[i]->processNode);
         printf(", s-in = %d, s-out = %d, interrupt=%d\n", cpu->cores[i]->switchInTimer, cpu->cores[i]->switchOutTimer, cpu->cores[i]->interruptTimer);
     }
 }
