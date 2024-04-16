@@ -12,6 +12,7 @@
         "tuple": "c",
         "type_traits": "c",
         "stdio.h": "c",
-        "schedulinglogic.h": "c"
+        "schedulinglogic.h": "c",
+        "stdlib.h": "c"
     }
 }
