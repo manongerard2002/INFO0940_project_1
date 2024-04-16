@@ -30,10 +30,9 @@ int getWaitQueueCount(void);
  * @param readyQueueAlgorithms An array of pointers to SchedulingAlgorithm objects representing the ready queue algorithms.
  * @param readyQueueCount The number of ready queue algorithms in the array.
  * @param workload The workload: necessary in case of SJF.
- * @param cpuCoreCount The number of cores of the CPU.
  * @return A pointer to the initialized Scheduler object.
  */
-Scheduler *initScheduler(SchedulingAlgorithm **readyQueueAlgorithms, int readyQueueCount, Workload *workload, int cpuCoreCount);
+Scheduler *initScheduler(SchedulingAlgorithm **readyQueueAlgorithms, int readyQueueCount, Workload *workload);
 
 
 /**
@@ -93,15 +92,6 @@ void removeReadyQueueNode(Scheduler *scheduler, int queueNbr, Node *node);
 bool processInReadyQueues(Scheduler *scheduler, int pid);
 
 
-//debug
-/**
- * Print the ready queues to the console.
- *
- * @param scheduler The scheduler.
- */
-void printReadyQueues(Scheduler *scheduler);
-
-
 /**
  * Print the ready queues to the console.
  *
@@ -133,22 +123,28 @@ void handleProcessForDisk(Scheduler *scheduler, Node *node);
 void assignProcessesToResources(Computer *computer);
 
 /**
- * Handles the process for the CPU.
+ * Puts the process node on the specified core and starts switch in.
  *
  * @param computer The computer.
+ * @param coreIdnex The index of the core on which the prrocess is put.
+ * @param node The process node to handle.
  */
 void putProcessOnCPU(Computer *computer, int coreIndex, Node *node);
 
+
 /**
- * Handles the process for the disk.
+ * Puts the process node on the disk.
  *
  * @param computer The computer.
+ * @param node The process node to handle.
  */
 void putProcessOnDisk(Computer *computer, Node *node);
 
 /**
- * Handles the process for the CPU.
+ * Update the cpu switch in/out, and interrupt timers and also the queue waiting timer
  *
+ * @param time The current time.
+ * @param nextTime the next time step.
  * @param computer The computer.
  */
 void advanceSchedulingTime(int time, int nextTime, Computer *computer);

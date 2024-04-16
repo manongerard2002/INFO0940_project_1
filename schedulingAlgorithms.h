@@ -57,21 +57,4 @@ void freeSchedulingAlgorithm(SchedulingAlgorithm *algorithm);
  */
 void setAlgorithmType(SchedulingAlgorithm *algorithm, const char *type);
 
-//debug:
-/**
- * Convert a SchedulingAlgorithmType to a string.
- *
- * @param type: the type of the algorithm
- *
- * @return a string representation of the algorithm type
- */
-const char* AlgoTypeToString(SchedulingAlgorithmType type);
-
-/**
- * Print the SchedulingAlgorithm to the console.
- *
- * @param algorithm: the SchedulingAlgorithm to print
- */
-void printQueueAlgo(SchedulingAlgorithm *algorithm);
-
 #endif // schedulingAlgorithms_h

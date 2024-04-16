@@ -111,13 +111,11 @@ void freeDisk(Disk *disk)
 //need args
 void handleInterrupt(Computer *computer)
 {
-    printf("\nInterrupt handler: pid=%d\n", computer->disk->processNode->pcb->pid);
     int interruptTimer = INTERRUPT_TIME;
     if (interruptTimer > 0)
     {
         computer->disk->state = DISK_IDLE;
         int core = rand() % (computer->cpu->coreCount); //should choose randomly one core for fairness ("no notion of core affinity")
-        printf("core %d interrupted\n", core);
         computer->cpu->cores[core]->state = INTERRUPTED;
         computer->cpu->cores[core]->interruptTimer = interruptTimer; // start timer
         if (computer->cpu->cores[core]->processNode)
@@ -140,56 +138,4 @@ void handleInterrupt(Computer *computer)
         }
     }*/
     return;
-}
-
-
-//debug:
-const char* CPUstateToString(coreState state)
-{
-    switch (state)
-    {
-        case SWITCH_IN:
-            return "SWITCH_IN";
-        case SWITCH_OUT:
-            return "SWITCH_OUT";
-        case OCCUPIED:
-            return "OCCUPIED";
-        case INTERRUPTED:
-            return "INTERRUPTED";
-        case IDLE:
-            return "IDLE";
-        default:
-            return "NOT A STATE: HUGE ERROR";
-    }
-}
-void printCPUStates(CPU *cpu)
-{
-    for (int i = 0; i < cpu->coreCount; i++)
-    {
-        printf("core %d, at state %s ", i, CPUstateToString(cpu->cores[i]->state));
-        if (cpu->cores[i]->processNode)
-            printNode(cpu->cores[i]->processNode);
-        printf(", s-in = %d, s-out = %d, interrupt=%d\n", cpu->cores[i]->switchInTimer, cpu->cores[i]->switchOutTimer, cpu->cores[i]->interruptTimer);
-    }
-}
-
-const char* DiskStateToString(DiskState state)
-{
-    switch (state)
-    {
-        case DISK_RUNNING:
-            return "DISK_RUNNING";
-        case DISK_IDLE:
-            return "DISK_IDLE";
-        default:
-            return "NOT A STATE: HUGE ERROR";
-    }
-}
-void printDiskState(Disk *disk)
-{
-    printf("disk at state %s ", DiskStateToString(disk->state));
-    if (disk->processNode)
-        printf(", with pid %d\n", disk->processNode->pcb->pid);
-    else
-        printf(".\n");
 }

@@ -50,26 +50,3 @@ void setAlgorithmType(SchedulingAlgorithm *algorithm, const char *type)
         exit(EXIT_FAILURE);
     }
 }
-
-//debug
-const char* AlgoTypeToString(SchedulingAlgorithmType type)
-{
-    switch (type)
-    {
-        case RR:
-            return "RR";
-        case FCFS:
-            return "FCFS";
-        case SJF:
-            return "SJF";
-        case PRIORITY:
-            return "PRIORITY";
-        default:
-            return "NOT A TYPE: HUGE ERROR";
-    }
-}
-
-void printQueueAlgo(SchedulingAlgorithm *algorithm)
-{
-    printf("type=%s    RRRSliceLimit=%d   executiontTimeLimit=%d    ageLimit=%d\n", AlgoTypeToString(algorithm->type), algorithm->RRSliceLimit, algorithm->executiontTimeLimit, algorithm->ageLimit);
-}

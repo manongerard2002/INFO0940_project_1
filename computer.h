@@ -138,44 +138,4 @@ void freeDisk(Disk *disk);
  */
 void handleInterrupt(Computer *computer);
 
-
-// debug: to remove after
-//debug:
-
-
-/**
- * Converts the given CPU core state to a string representation.
- *
- * @param state The CPU core state to convert.
- * @return A string representation of the CPU core state.
- */
-const char* CPUstateToString(coreState state);
-
-
-/**
- * Prints the CPU states.
- *
- * This function takes a pointer to a CPU structure and prints the states of the CPU.
- *
- * @param cpu A pointer to the CPU structure.
- */
-void printCPUStates(CPU *cpu);
-
-/**
- * Converts the given Disk state to a string representation.
- *
- * @param state The Disk state to convert.
- * @return A string representation of the Disk state.
- */
-const char* DiskStateToString(DiskState state);
-
-/**
- * Prints the Disk state.
- *
- * This function takes a pointer to a Disk structure and prints the state of the Disk.
- *
- * @param disk A pointer to the Disk structure.
- */
-void printDiskState(Disk *disk);
-
 #endif // computer_h

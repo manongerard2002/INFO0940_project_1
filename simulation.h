@@ -137,22 +137,4 @@ void launchSimulation(Workload *workload, SchedulingAlgorithm **algorithms, int 
  */
 void advanceNextEvent(Workload *workload, int pid);
 
-//Debug:
-
-/**
- * Convert a ProcessState to a string.
- *
- * @param state The state of the process.
- *
- * @return A string representation of the process state.
- */
-const char* ProcessStateToString(ProcessState state);
-
-/**
- * Print the states of the processes in the workload.
- *
- * @param workload The workload to print the process states of.
- */
-void printProcessStates(const Workload *workload);
-
 #endif // simulation_h

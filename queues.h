@@ -134,19 +134,4 @@ Node *topNode(Queue *queue);
  */
 bool processInQueue(Queue *queue, int pid);
 
-//debug:
-/**
- * Prints the contents of a given node.
- *
- * @param node The node to be printed.
- */
-void printNode(Node *node);
-
-/**
- * Prints the elements of a queue.
- *
- * @param queue The queue to be printed.
- */
-void printQueue(Queue *queue);
-
 #endif // queues_h

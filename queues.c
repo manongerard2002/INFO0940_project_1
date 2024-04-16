@@ -187,7 +187,8 @@ void removeNode(Queue *queue, Node *node)
     if (queue->head == node)
     {
         queue->head = queue->head->next;
-        queue->head->prev = NULL;
+        if (queue->head)
+            queue->head->prev = NULL;
         queue->size -= 1;
         return;
     }
@@ -226,26 +227,4 @@ bool processInQueue(Queue *queue, int pid)
         node = node->next;
     }
     return false;
-}
-
-//debug
-void printNode(Node *node)
-{
-    printf("pid %d - state ", node->pcb->pid);
-    //ProcessStateToString(node->pcb->state); //works ?
-    printf("priority %d ", node->pcb->priority);
-    printf("executionTime: %d ", node->executionTime);
-    printf("currentQueueWaitingTime: %d ", node->currentQueueWaitingTime);
-    printf("currentQueueExecutionTime: %d\n", node->currentQueueExecutionTime);
-}
-
-void printQueue(Queue *queue)
-{
-    printf("printReadyQueue: \n");
-    Node *node = queue->head;
-    while (node)
-    {
-        printNode(node);
-        node = node->next;
-    }
 }

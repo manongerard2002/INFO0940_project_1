@@ -93,17 +93,6 @@ static bool workloadOver(const Workload *workload);
 static void addAllProcessesToStats(AllStats *stats, Workload *workload);
 
 /**
- * Compare function used in qsort before the main simulation loop. If you don't
- * use qsort, you can remove this function.
- *
- * @param a, b: pointers to ProcessSimulationInfo to compare
- *
- * @return < 0 if process a is first, > 0 if b is first, = 0 if they start at
- *         the same time
- */
-//static int compareProcessStartTime(const void *a, const void *b);
-
-/**
  * Retrieves the PCB (Process Control Block) from the given Workload at the specified index.
  *
  * @param workload The Workload from which to retrieve the PCB.
@@ -122,8 +111,6 @@ static PCB *getPCBFromWorkload(Workload *workload, int index);
  */
 static void handleSimulationEvents(Computer *computer, Workload *workload, int time, AllStats *stats);
 
-//static int getNextProcessEventTime(Workload *Workload, Scheduler *scheduler);
-
 /**
  * Handles the events of the simulation.
  *
@@ -133,7 +120,6 @@ static void handleSimulationEvents(Computer *computer, Workload *workload, int t
  * @param stats The statistics of the simulation.
  */
 static void processArrived(Scheduler *scheduler, Workload *workload, int time, AllStats *stats);
-
 
 /**
  * Advances the time of the processes in the workload and the scheduler.
@@ -146,8 +132,6 @@ static void processArrived(Scheduler *scheduler, Workload *workload, int time, A
  * @param stats The statistics of the simulation.
  */
 static void advanceProcessTime(int time, int nextTime, Workload *workload, Computer *computer, ProcessGraph *graph, AllStats *stats);
-
-//int minTime(int time, int nextTime);
 
 /* -------------------------- getters and setters -------------------------- */
 
@@ -437,7 +421,7 @@ void launchSimulation(Workload *workload, SchedulingAlgorithm **algorithms, int 
     }
     setNbProcessesInStats(stats, getProcessCount(workload));
 
-    Scheduler *scheduler = initScheduler(algorithms, algorithmCount, workload, cpuCoreCount);
+    Scheduler *scheduler = initScheduler(algorithms, algorithmCount, workload);
     if (!scheduler)
     {
         fprintf(stderr, "Error: could not initialize scheduler\n");
@@ -477,7 +461,6 @@ void launchSimulation(Workload *workload, SchedulingAlgorithm **algorithms, int 
     /* Main loop of the simulation.*/
     while (!workloadOver(workload)) // You probably want to change this condition
     {
-        printf("----------------------------------------------------------------in while time: %d----------------------------------------\n", time);
         // TODO
         //1. Handle event(s): simulator and the scheduler check if an event is triggered at the current time unit and handle it
         handleSimulationEvents(computer, workload, time, stats);
@@ -486,33 +469,17 @@ void launchSimulation(Workload *workload, SchedulingAlgorithm **algorithms, int 
         //choosing what processes to execute next.
         assignProcessesToResources(computer);
 
-        /*//3. Get next event time: Here, the simulator and scheduler will simply check what is the time unit
-        //of the next event in order to jump directly to it in the next step.
-        int nextProcessEventTime = getNextProcessEventTime(workload, scheduler);
-        //int nextSchedulingEventTime = getNextSchedulingEventTime(workload, scheduler);
-        int nextTime = nextProcessEventTime;//(nextProcessEventTime, nextSchedulingEventTime);
-        printf("time=%d    next event time= %d\n", time, nextTime);*/
-
         //4. Advance time to the next event: This is where the progression of time is simulated. The simulator
         //will update the advancement of the processes in the workload and the scheduler will update its
         //timers.
-        int nextTime=time+1; //tmp
+        int nextTime=time+1; //instead of step 3
         advanceProcessTime(time, nextTime, workload, computer, graph, stats);
         advanceSchedulingTime(time, nextTime, computer);
 
-        printStats(stats);
-        printGraph(graph);
-        printCPUStates(computer->cpu);
-        printDiskState(computer->disk);
-        printReadyQueues(computer->scheduler);
-        
-        //Then the current time can be updated too in order to deal with the next event at the next iteration of the loop.
-        if (nextTime == - 1 || time == nextTime)
-            break;
         time = nextTime;
         
         //Maximum iteration to avoid infinite loop for preemptiveness
-        if (time > 6)
+        if (time > 200)
             break;
     }
     freeComputer(computer);
@@ -523,7 +490,6 @@ void launchSimulation(Workload *workload, SchedulingAlgorithm **algorithms, int 
 static bool workloadOver(const Workload *workload)
 {
     //disk idle, cpu idle, readyqueue empty & no more next event
-    printProcessStates(workload);
     for (int i = 0; i < workload->nbProcesses; i++)
     {
         //if (workload->processesInfo[i]->advancementTime < workload->processesInfo[i]->processDuration)
@@ -561,25 +527,6 @@ static void addAllProcessesToStats(AllStats *stats, Workload *workload)
     }
 }
 
-/*static int compareProcessStartTime(const void *a, const void *b)
-{
-    const ProcessSimulationInfo *infoA = *(const ProcessSimulationInfo **)a;
-    const ProcessSimulationInfo *infoB = *(const ProcessSimulationInfo **)b;
-
-    if (infoA->startTime < infoB->startTime)
-    {
-        return -1;
-    }
-    else if (infoA->startTime > infoB->startTime)
-    {
-        return 1;
-    }
-    else
-    {
-        return 0;
-    }
-}*/
-
 void advanceNextEvent(Workload *workload, int pid)
 {
     int index = getProcessIndex(workload, pid);
@@ -589,28 +536,9 @@ void advanceNextEvent(Workload *workload, int pid)
     workload->processesInfo[index]->nextEvent = nextEvent;
 }
 
-//get the time of the next process that has an event to be able to advance to it in the simulation
-/*static int getNextProcessEventTime(Workload *workload, Scheduler *scheduler)
-{
-    //next event: soit il y a plus rien, process arrive, disk fini, IO ..., CPU
-    int time = -1;
-    for (int i = 0; i < getProcessCount(workload); i++)
-    {
-        int pid = getPIDFromWorkload(workload, i);
-        if (pid != -1)
-        {
-            int nextTime = getProcessNextEventTime(workload, pid) + getProcessStartTime(workload, pid); //need "real" time not of th eprocess
-            printf("nextPevent: time=%d    nextTime=%d\n", time, nextTime);
-            time = minTime(time, nextTime);
-        }
-    }
-    return time;
-}*/
-
 static void handleSimulationEvents(Computer *computer, Workload *workload, int time, AllStats *stats)
 {
     //Ex: if a process arrives in the system, the simulator will call the scheduler to put the process in the ready queue.
-    printf("\nbeginning of handleEvents\n");
     processArrived(computer->scheduler, workload, time, stats);
 
     handleSchedulerEvents(computer, time, stats);
@@ -619,7 +547,6 @@ static void handleSimulationEvents(Computer *computer, Workload *workload, int t
     if (computer->disk->processNode && getProcessCurEventTimeLeft(workload, computer->disk->processNode->pcb->pid) == 0) //terminated -> interrupt
     {
         //start interrupt
-        printf("process %d begins interrupt\n", computer->disk->processNode->pcb->pid);
         handleInterrupt(computer);
     }
 }
@@ -632,7 +559,6 @@ void processArrived(Scheduler *scheduler, Workload *workload, int time, AllStats
         //"The first event will always be a CPU event (at time 0)"
         if (getProcessStartTime(workload, pid) == time)
         {
-            printf("process %d arrived at time %d\n", pid, time);
             PCB *pcb = getPCBFromWorkload(workload, i);
             pcb->state = READY;
             Node *node = initNode(pcb);
@@ -667,21 +593,14 @@ void advanceProcessTime(int time, int nextTime, Workload *workload, Computer *co
                 break;
             case WAITING:
                 addProcessEventToGraph(graph, pid, time, state, NO_CORE);
-                printDiskState(computer->disk);
                 if (computer->disk->state == DISK_RUNNING && computer->disk->processNode->pcb->pid == pid)
                 {
-                    printf("add disk running in graph\n");
                     setProcessAdvancementTime(workload, pid, getProcessAdvancementTime(workload, pid) + deltaTime);
                     addDiskEventToGraph(graph, pid, time, DISK_RUNNING);
                 }
                 else if (computer->disk->state == DISK_IDLE && computer->disk->processNode->pcb->pid == pid)
-                { //debug
-                    printf("add disk idle while interrupt\n");
-                    addDiskEventToGraph(graph, pid, time, DISK_IDLE);
-                }
-                else
                 {
-                    printf("process %d waiting in the waiting queue", pid);
+                    addDiskEventToGraph(graph, pid, time, DISK_IDLE);
                 }
                break;
             case RUNNING:
@@ -704,43 +623,5 @@ void advanceProcessTime(int time, int nextTime, Workload *workload, Computer *co
     {
         //Issue on submission platform if not present
         addDiskEventToGraph(graph, -1, time, DISK_IDLE);
-    }
-}
-
-//to deal with time = -1
-/*int minTime(int time, int nextTime)
-{
-    if (time < 0)
-        return nextTime;
-    else if (nextTime < 0)
-        return time;
-    else
-        return min(time, nextTime);
-}*/
-
-//debug:
-const char* ProcessStateToString(ProcessState state)
-{
-    switch (state)
-    {
-        case READY:
-            return "READY";
-        case RUNNING:
-            return "RUNNING";
-        case WAITING:
-            return "WAITING";
-        case TERMINATED:
-            return "TERMINATED";
-        default:
-            return "NOT A STATE: HUGE ERROR";
-    }
-}
-
-void printProcessStates(const Workload *workload)
-{
-    for (int i = 0; i < workload->nbProcesses; i++)
-    {
-        printf("process at index %d, with pid %d, at state %s, ", i, workload->processesInfo[i]->pcb->pid, ProcessStateToString(workload->processesInfo[i]->pcb->state));
-        printf("processDuration=%d and advancementTime=%d\n", workload->processesInfo[i]->processDuration, workload->processesInfo[i]->advancementTime);
     }
 }
